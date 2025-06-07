@@ -1,3 +1,15 @@
-DRQI_FokkerPlank2d.py: The DRQI template for solving problems with periodic boundary condition
-DRQI_FokkerPlank2d.py: The DRQI template for solving problems with Dirichlet boundary condition
-Anyone who uses the codes is requiredzto cite the article "Deep Rayleigh quotient iteration (DRQI) for high-precision numerical solutions of eigenvalue problems for differential operators" 
+# DRQI-Based Eigenvalue Solver
+
+This repository provides a reproducible implementation of the DRQI-based eigenvalue solver used in our submission.
+
+## Features
+- Fully reproducible with fixed seed and logged training parameters.
+- Supports multiple algorithms: DRQI, IPMNN, DRM.
+- Logs training loss, eigenvalue estimates, and equation loss.
+- Model and logs are saved for reproducibility.
+
+## Reproduction Instructions
+
+```bash
+pip install -r requirements.txt
+python DRQI_Laplace2d.py
