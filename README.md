@@ -7,4 +7,4 @@ This repository provides a reproducible implementation of the DRQI-based eigenva
 - Supports multiple algorithms: DRQI, IPMNN, DRM.
 - Logs training loss, eigenvalue estimates, and equation loss.
 - Model and logs are saved for reproducibility.
-- We will provide the versions of all denpendencies later.
+- To ensure the reproductivity, follow the versions of all denpendencies in requirments.txt.
