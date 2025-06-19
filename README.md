@@ -19,3 +19,8 @@ This repository provides a reproducible implementation of the DRQI-based eigenva
 ## Exceptions
 - In random initialized cases sometimes the model might convergence to high ordered eigenpairs
 - We will continue to update the DRQI to improve its performance
+
+## 2025-06-19
+- After several series of experiments we found: 
+- DRQI under different seeds, Adam optimizer: Suitable for larger lr (0.01). In contrast, IPMNN and DRM are advised to use 0.001.
+- We would carry out more experiments tommorrow.
