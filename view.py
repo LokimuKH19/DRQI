@@ -38,6 +38,7 @@ def parse_log_file(log_path):
         'lambda_error': extract(r'Lambda_Error: ([\d\.eE+-]+)'),
         'eigen_value': extract(r'Eigen Value: ([\d\.eE+-]+)'),
         'eq_loss': extract(r'Equation Loss:([\d\.eE+-]+)'),
+        'u_loss': extract(r'U Loss:([\d\.eE+-]+)'),
     }
 
 
@@ -57,6 +58,7 @@ class App:
             "lambda": {"label": "absolute λ error", "color": COLORS[0]},
             "loss": {"label": "loss function", "color": COLORS[1]},
             "eq_loss": {"label": "equation loss function", "color": COLORS[2]},
+            "u_loss": {"label": "mean square u error", "color": COLORS[3]},
         }
         self.root = root
         self.root.title("PINN Training Visualization")
@@ -91,10 +93,12 @@ class App:
         # Plot checkboxes
         self.plot_lambda = tk.BooleanVar(value=True)
         self.plot_loss = tk.BooleanVar(value=False)
+        self.plot_u_loss = tk.BooleanVar(value=False)
         self.plot_eq_loss = tk.BooleanVar(value=False)
 
         tk.Checkbutton(control_frame, text="λ Error", variable=self.plot_lambda).pack(side=tk.LEFT)
         tk.Checkbutton(control_frame, text="Loss", variable=self.plot_loss).pack(side=tk.LEFT)
+        tk.Checkbutton(control_frame, text="U Loss", variable=self.plot_u_loss).pack(side=tk.LEFT)
         tk.Checkbutton(control_frame, text="Eq. Loss", variable=self.plot_eq_loss).pack(side=tk.LEFT)
 
         tk.Label(control_frame, text="Y Axis Scale:").pack(side=tk.LEFT, padx=(30, 5))
@@ -119,10 +123,12 @@ class App:
         self.comparative_plot_frame.pack_forget()  # 初始不显示
         self.radio_lambda = tk.Radiobutton(self.comparative_plot_frame, text="λ Error", variable=self.comparative_plot_type, value="lambda")
         self.radio_loss = tk.Radiobutton(self.comparative_plot_frame, text="Loss", variable=self.comparative_plot_type, value="loss")
+        self.radio_u_loss = tk.Radiobutton(self.comparative_plot_frame, text="U Loss", variable=self.comparative_plot_type, value="u_loss")
         self.radio_eq_loss = tk.Radiobutton(self.comparative_plot_frame, text="Eq. Loss", variable=self.comparative_plot_type, value="eq_loss")
         self.radio_u = tk.Radiobutton(self.comparative_plot_frame, text="u(x)", variable=self.comparative_plot_type, value="u")
         self.radio_lambda.pack(side=tk.LEFT)
         self.radio_loss.pack(side=tk.LEFT)
+        self.radio_u_loss.pack(side=tk.LEFT)
         self.radio_eq_loss.pack(side=tk.LEFT)
         self.radio_u.pack(side=tk.LEFT)
 
@@ -147,9 +153,10 @@ class App:
         self.ax.clear()
         self.canvas.draw()
         mode = self.mode.get()
-        if mode == "comparative":
+        if mode in ["comparative", "multi"]:
             self.comparative_plot_frame.pack(side=tk.LEFT, padx=10)
             self.plot_lambda.set(False)
+            self.plot_u_loss.set(False)
             self.plot_loss.set(False)
             self.plot_eq_loss.set(False)
         else:
@@ -208,6 +215,7 @@ class App:
         self.plot_data = {
             "lambda": np.abs(np.array([x.detach().cpu().item() if torch.is_tensor(x) else float(x) for x in self.model.lambdas]) - self.theoretical_lambda) if self.theoretical_lambda else None,
             "loss": np.array([x.detach().cpu().item() if torch.is_tensor(x) else float(x) for x in self.model.losses]),
+            "u_loss": np.array([x.detach().cpu().item() if torch.is_tensor(x) else float(x) for x in self.model.u_losses]),
             "eq_loss": np.array([x.detach().cpu().item() if torch.is_tensor(x) else float(x) for x in self.model.eq_losses]),
         }
 
@@ -229,6 +237,8 @@ class App:
                     self.ax.plot(x_axis, self.plot_data["loss"], color=self.plot_config["loss"]["color"], label=self.plot_config["loss"]["label"])
                 if self.plot_eq_loss.get():
                     self.ax.plot(x_axis, self.plot_data["eq_loss"], color=self.plot_config["eq_loss"]["color"], label=self.plot_config["eq_loss"]["label"])
+                if self.plot_u_loss.get():
+                    self.ax.plot(x_axis, self.plot_data["u_loss"], color=self.plot_config["u_loss"]["color"], label=self.plot_config["u_loss"]["label"])
                 self.ax.set_title("Training Convergence")
                 self.ax.set_xlabel("Epoch")
                 self.ax.set_ylabel("Value")
@@ -237,15 +247,16 @@ class App:
 
             elif mode == "u(x)":
                 if self.model.d == 1:
-                    # 取出x和u数据，全部转cpu并转numpy
+                    # Numpification
                     x_tensor = self.model.x[0].detach().cpu()
                     u_tensor = self.model.u.detach().cpu()
                     x_np = x_tensor.numpy().flatten()
                     u_np = u_tensor.numpy().flatten()
-                    # 根据x的值排序，保持对应u顺序
+                    # keep the order
                     sort_idx = np.argsort(x_np)
                     x_sorted = x_np[sort_idx]
-                    u_sorted = u_np[sort_idx]
+                    u_sorted = np.abs(u_np[sort_idx])
+                    u_sorted = (u_sorted-np.min(u_sorted))/(np.max(u_sorted)-np.min(u_sorted))
                     self.ax.clear()
                     self.ax.grid(True, linestyle='--', color='lightgray')
                     self.ax.plot(x_sorted, u_sorted, color=COLORS[3])
@@ -277,7 +288,7 @@ class App:
                 continue
             algo = info['algorithm']
             if algo not in algorithms:
-                algorithms[algo] = {"lambda": [], "loss": [], "eq_loss": [], "model": None}
+                algorithms[algo] = {"lambda": [], "loss": [], "eq_loss": [], "u_loss": [], "model": None}
             timestamp = re.search(r"\d{8}_\d{6}", os.path.basename(path)).group(0)
             omega = ast.literal_eval(info["unique_param"]).get("omega", None)
             base = f"{info['algorithm']}_LP_{info['dimension']}D_OMEGA{omega}_SEED{info['seed']}_Adam_{timestamp}.pkl"
@@ -293,12 +304,13 @@ class App:
                         lambda_error = [0] * len(model.lambdas)
                     algorithms[algo]["lambda"] = lambda_error
                     algorithms[algo]["loss"] = model.losses
+                    algorithms[algo]["u_loss"] = model.u_losses
                     algorithms[algo]["eq_loss"] = [x.detach().cpu().item() for x in model.eq_losses]
 
         self.ax.clear()
         self.ax.grid(True, linestyle='--', color='lightgray')
 
-        if plot_type in ["lambda", "loss", "eq_loss"]:
+        if plot_type in ["lambda", "loss", "eq_loss", "u_loss"]:
             for i, algo in enumerate(["DRM", "IPMNN", "DRQI"]):
                 if algo not in algorithms:
                     continue
@@ -326,6 +338,8 @@ class App:
                 u_tensor = model.u.detach().cpu()
                 x_np = x_tensor.numpy().flatten()
                 u_np = u_tensor.numpy().flatten()
+                u_np = np.abs(u_np)
+                u_np = (u_np-np.min(u_np))/(np.max(u_np)-np.min(u_np))
                 sort_idx = np.argsort(x_np)
                 self.ax.plot(x_np[sort_idx], u_np[sort_idx], label=algo, color=COLORS[i])
             self.ax.set_xlabel("x")
@@ -335,25 +349,50 @@ class App:
         self.canvas.draw()
 
     def plot_point_cloud(self):
-        # 配置功能y_scale功能
         yscale = self.y_scale.get()
+        plot_type = self.comparative_plot_type.get()
         grouped = {"DRM": [], "IPMNN": [], "DRQI": []}
+
         for path in self.log_files:
             info = parse_log_file(path)
             if not info['dimension']:
                 continue
-            grouped.get(info['algorithm'], []).append(float(info['lambda_error']))
+
+            algo = info['algorithm']
+            value = None
+
+            if plot_type == "lambda":
+                value = float(info['lambda_error'])
+            elif plot_type == "loss":
+                value = float(info['final_loss'])
+            elif plot_type == "eq_loss":
+                value = float(info['eq_loss'])
+            elif plot_type == "u_loss":
+                value = float(info['u_loss'])
+            elif plot_type == "u":
+                messagebox.showerror("Error", "Multi log mode does not support u(x) point cloud.")
+                return
+            if value is not None and algo in grouped:
+                grouped[algo].append(value)
 
         self.ax.clear()
         self.ax.grid(True, linestyle='--', color='lightgray')
         for i, (algo, values) in enumerate(grouped.items()):
             if values:
-                self.ax.scatter([algo]*len(values), values, label=algo, color=COLORS[i])
-        self.ax.set_title("Lambda Error Point Cloud")
-        self.ax.set_ylabel("|lambda - lambda*|")
+                self.ax.scatter([algo] * len(values), values, label=algo, color=COLORS[i])
+
+        ylabel_map = {
+            "lambda": "|lambda - lambda*|",
+            "loss": "Final Loss",
+            "eq_loss": "Equation Loss",
+            "u_loss": "Mean square u error"
+        }
+
+        self.ax.set_title(f"{ylabel_map.get(plot_type, 'Metric')} Point Cloud")
+        self.ax.set_ylabel(ylabel_map.get(plot_type, 'Value'))
         self.ax.legend()
         self.ax.set_yscale(yscale)
-
+        self.canvas.draw()
 
     def save_figure(self):
         file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG Image", "*.png")])

@@ -1,11 +1,11 @@
 {
   "seed": 30,
   "dimension": 1,
-  "epochs": 100000,
-  "epsilon1": 1e-5,
+  "epochs": 3000,
+  "epsilon1": 1e-7,
   "epsilon2_ratio": 0.01,
   "device": "cuda",
-  "learning_rate": 0.001,
+  "learning_rate": 0.01,
   "network_structure": {
     "1": [1, 10, 10, 1],
     "2": [2, 10, 15, 1],

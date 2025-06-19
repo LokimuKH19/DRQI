@@ -1,11 +1,11 @@
 {
-  "seed": 30,
+  "seed": 34,
   "dimension": 1,
-  "epochs": 100000,
-  "epsilon1": 1e-05,
+  "epochs": 3000,
+  "epsilon1": 1e-07,
   "epsilon2_ratio": 0.01,
   "device": "cuda",
-  "learning_rate": 0.0008,
+  "learning_rate": 0.01,
   "network_structure": {
     "1": [
       1,
@@ -32,9 +32,9 @@
       1
     ]
   },
-  "algorithm": "DRQI",
+  "algorithm": "IPMNN",
   "optimizer": "Adam",
   "omega": 0.5,
   "gamma": 0,
-  "points_per_dimension": 1200.0
+  "points_per_dimension": 1000
 }

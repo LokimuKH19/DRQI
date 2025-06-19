@@ -19,21 +19,6 @@ def load_config():
     return config
 
 
-    # assign config values
-    ALGORITHM = config["algorithm"]
-    D = config["dimension"]
-    SEED = config["seed"]
-    EPOCHS = config["epochs"]
-    EPSILON1 = config["epsilon1"]
-    EPSILON2 = EPSILON1 * config["epsilon2_ratio"]
-    LEARNING_RATE = config["learning_rate"]
-    OMEGA = config["omega"]
-    GAMMA = config["gamma"]
-    NET_STRUCTURE = config["network_structure"]
-    POINTS_PER_DIM = config["points_per_dimension"]
-    OPTIMIZER = config["optimizer"]
-
-
 # print the configuration and save to log
 def print_config(model, seed, epochs, real_epoch, epsilon1, epsilon2, avg_time, timestamp, save_log=True, log_dir="logs"):
     config_lines = []
@@ -65,7 +50,7 @@ def print_config(model, seed, epochs, real_epoch, epsilon1, epsilon2, avg_time, 
     config_lines.append("=================Results==================\n")
     config_lines.append(f'Loss: {model.loss.item()}\n'
                       f'Lambda_Error: {abs(model.lambda_k1-standard)}\n'
-                      f'Eigen Value: {model.lambda_k1}\nEquation Loss:{model.eq_loss}')
+                      f'Eigen Value: {model.lambda_k1}\nU Loss:{model.u_loss}\nEquation Loss:{model.eq_loss}')
     config_lines.append(f"Average time per step: {avg_time:.6f} seconds")
     for line in config_lines:
         print(line)
@@ -134,6 +119,19 @@ class PINN(nn.Module):
         }
         self.eq_losses = []
         self.eq_loss = None
+        self.u_losses = []
+        self.u_loss = None
+        self.UTH = self.u_th()
+        self.normalized_uth = (self.UTH-torch.min(self.UTH))/(torch.max(self.UTH)-torch.min(self.UTH))
+
+    # Laplace theoretical solution
+    def u_th(self):
+        # u_th(x) = ∏ sin(π x_i)
+        sin_terms = [torch.sin(np.pi * xi) for xi in self.x]
+        u_exact = sin_terms[0]
+        for i in range(1, self.d):
+            u_exact *= sin_terms[i]
+        return u_exact
 
     def load_data(self, x, requires_grad=True):
         data64 = torch.tensor(x, requires_grad=requires_grad, dtype=torch.float64)
@@ -175,6 +173,8 @@ class PINN(nn.Module):
         if self.algorithm == "DRQI":
             omega = self.unique_parameter["omega"]
             self.loss = self.mse(lu - (self.lambda_k1 + 1) * (omega * u + (1 - omega) * self.u), torch.zeros_like(u))
+        elif self.algorithm == "ADRQI":    # Do Improvements Here
+            pass
         elif self.algorithm == "IPMNN":
             self.loss = self.mse(lu / torch.norm(lu) - self.u, torch.zeros_like(u))
         elif self.algorithm == "DRM":
@@ -191,6 +191,8 @@ class PINN(nn.Module):
         self.lambdas.append(lambda_k)
         self.losses.append(self.loss.item())
         normalized_u = u / torch.norm(u)
+        self.u_loss = self.mse((u-torch.min(u))/(torch.max(u)-torch.min(u)), self.normalized_uth)
+        self.u_losses.append(self.u_loss.item())
         self.u = self.load_data(self.read_data(normalized_u), requires_grad=False)
         self.optimizer.step()
 
@@ -201,7 +203,7 @@ def train(model, epochs, epsilon1, epsilon2):
     for epoch in range(epochs):
         model.update()
         print(f'Dimension{model.d} Epoch {epoch + 1}/{epochs}, Loss: {model.loss.item()}, '
-              f'Lambda_Error: {abs(model.lambda_k1-standard)}, '
+              f'Lambda_Error: {abs(model.lambda_k1-standard)}, U_Error: {model.u_loss.item()}, '
               f'Eigen Value: {model.lambda_k1}, Equation Loss:{model.eq_loss}')
         if model.eq_loss < epsilon1 and abs(model.eq_losses[-2]-model.eq_loss) < epsilon2:
             end = time.time()
