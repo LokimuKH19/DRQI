@@ -9,8 +9,19 @@ import re
 import ast
 import numpy as np
 from DRQI_Laplace2d import PINN
+from matplotlib.ticker import MaxNLocator
+import math
+import matplotlib.font_manager as fm
 
 COLORS = ['#FFA853', '#92B8F9', '#F39EF9', '#7DDE6A']
+
+# Set global style for journal-quality plots
+plt.rcParams['font.family'] = 'Times New Roman'
+plt.rcParams['axes.labelsize'] = 14
+plt.rcParams['axes.titlesize'] = 15
+plt.rcParams['legend.fontsize'] = 13
+plt.rcParams['xtick.labelsize'] = 12
+plt.rcParams['ytick.labelsize'] = 12
 
 
 def parse_log_file(log_path):
@@ -40,16 +51,6 @@ def parse_log_file(log_path):
         'eq_loss': extract(r'Equation Loss:([\d\.eE+-]+)'),
         'u_loss': extract(r'U Loss:([\d\.eE+-]+)'),
     }
-
-
-def plot_figure(ax, title, x_data, y_data, xlabel="Epoch", ylabel="Value", color="#FFA853", yscale="linear"):
-    ax.clear()
-    ax.grid(True, linestyle='--', color='lightgray')
-    ax.plot(x_data, y_data, color=color)
-    ax.set_title(title)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-    ax.set_yscale(yscale)
 
 
 class App:
@@ -136,6 +137,41 @@ class App:
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
+        # 坐标轴控制相关
+        self.manual_axis = tk.BooleanVar(value=False)
+        tk.Checkbutton(control_frame, text="Manual-Axes Limit", variable=self.manual_axis).pack(side=tk.LEFT, padx=(20, 5))
+
+        self.xmin_entry = tk.Entry(control_frame, width=8)
+        self.xmin_entry.pack(side=tk.LEFT)
+        self.xmin_entry.insert(0, "")  # 初始留空
+        tk.Label(control_frame, text="≤ x ≤").pack(side=tk.LEFT)
+
+        self.xmax_entry = tk.Entry(control_frame, width=8)
+        self.xmax_entry.pack(side=tk.LEFT)
+        self.xmax_entry.insert(0, "")
+
+        self.ymin_entry = tk.Entry(control_frame, width=8)
+        self.ymin_entry.pack(side=tk.LEFT, padx=(10, 0))
+        self.ymin_entry.insert(0, "")
+        tk.Label(control_frame, text="≤ y ≤").pack(side=tk.LEFT)
+
+        self.ymax_entry = tk.Entry(control_frame, width=8)
+        self.ymax_entry.pack(side=tk.LEFT)
+        self.ymax_entry.insert(0, "")
+
+    def apply_manual_axes(self):
+        if not self.manual_axis.get():
+            return
+        try:
+            xmin = float(self.xmin_entry.get())
+            xmax = float(self.xmax_entry.get())
+            ymin = float(self.ymin_entry.get())
+            ymax = float(self.ymax_entry.get())
+            self.ax.set_xlim(xmin, xmax)
+            self.ax.set_ylim(ymin, ymax)
+        except ValueError:
+            messagebox.showerror("Input error", "Check the format of the input value(e.g. 1e-3)")
+
     def update_lambda_theory(self):
         expr = self.lambda_input.get()
         try:
@@ -161,6 +197,18 @@ class App:
             self.plot_eq_loss.set(False)
         else:
             self.comparative_plot_frame.pack_forget()
+
+        if mode == "multi":
+            self.manual_axis.set(False)  # 强制取消勾选
+            self.xmin_entry.config(state=tk.DISABLED)
+            self.xmax_entry.config(state=tk.DISABLED)
+            self.ymin_entry.config(state=tk.DISABLED)
+            self.ymax_entry.config(state=tk.DISABLED)
+        else:
+            self.xmin_entry.config(state=tk.NORMAL)
+            self.xmax_entry.config(state=tk.NORMAL)
+            self.ymin_entry.config(state=tk.NORMAL)
+            self.ymax_entry.config(state=tk.NORMAL)
 
     def load_logs(self):
         mode = self.mode.get()
@@ -239,11 +287,11 @@ class App:
                     self.ax.plot(x_axis, self.plot_data["eq_loss"], color=self.plot_config["eq_loss"]["color"], label=self.plot_config["eq_loss"]["label"])
                 if self.plot_u_loss.get():
                     self.ax.plot(x_axis, self.plot_data["u_loss"], color=self.plot_config["u_loss"]["color"], label=self.plot_config["u_loss"]["label"])
-                self.ax.set_title("Training Convergence")
-                self.ax.set_xlabel("Epoch")
+                self.ax.set_title("")
+                self.ax.set_xlabel("")
                 self.ax.set_ylabel("Value")
                 self.ax.set_yscale(yscale)
-                self.ax.legend()
+                self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
 
             elif mode == "u(x)":
                 if self.model.d == 1:
@@ -274,6 +322,7 @@ class App:
         elif self.mode.get() == "multi":
             self.plot_point_cloud()
 
+        self.apply_manual_axes()
         self.canvas.draw()
 
     # 比较模式的绘图
@@ -323,7 +372,7 @@ class App:
             self.ax.set_ylabel("Value")
             self.ax.set_title(f"{plot_type.replace('_', ' ').title()} Comparison")
             self.ax.set_yscale(yscale)
-            self.ax.legend()
+            self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
 
         elif plot_type == "u":
             dim = algorithms["DRM"]["model"].d if "DRM" in algorithms else None
@@ -345,7 +394,8 @@ class App:
             self.ax.set_xlabel("x")
             self.ax.set_ylabel("u(x)")
             self.ax.set_title("u(x) Comparison")
-            self.ax.legend()
+            self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
+        self.apply_manual_axes()
         self.canvas.draw()
 
     def plot_point_cloud(self):
@@ -390,8 +440,9 @@ class App:
 
         self.ax.set_title(f"{ylabel_map.get(plot_type, 'Metric')} Point Cloud")
         self.ax.set_ylabel(ylabel_map.get(plot_type, 'Value'))
-        self.ax.legend()
+        self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
         self.ax.set_yscale(yscale)
+        self.apply_manual_axes()
         self.canvas.draw()
 
     def save_figure(self):
