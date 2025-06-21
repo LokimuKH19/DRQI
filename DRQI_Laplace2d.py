@@ -179,8 +179,6 @@ class PINN(nn.Module):
             self.loss = self.mse(lu / torch.norm(lu) - self.u, torch.zeros_like(u))
         elif self.algorithm == "DRM":
             gamma = self.unique_parameter["gamma"]
-            if self.d == 4:
-                gamma = 100
             self.loss = torch.sum(lu * u) / torch.sum(u * u) + gamma * (torch.sum(u * u) - 1) ** 2
 
         self.loss.backward()
@@ -205,9 +203,10 @@ def train(model, epochs, epsilon1, epsilon2):
         print(f'Dimension{model.d} Epoch {epoch + 1}/{epochs}, Loss: {model.loss.item()}, '
               f'Lambda_Error: {abs(model.lambda_k1-standard)}, U_Error: {model.u_loss.item()}, '
               f'Eigen Value: {model.lambda_k1}, Equation Loss:{model.eq_loss}')
-        if model.eq_loss < epsilon1 and abs(model.eq_losses[-2]-model.eq_loss) < epsilon2:
-            end = time.time()
-            return epoch+1, (end-start)/epoch
+        if epoch > 1:
+            if model.eq_loss < epsilon1 and abs(model.eq_losses[-2]-model.eq_loss) < epsilon2:
+                end = time.time()
+                return epoch+1, (end-start)/epoch
     end = time.time()
     return epochs, (end - start)/epochs
 
