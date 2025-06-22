@@ -1,0 +1,41 @@
+========== Configuration ==========
+Seed: 39
+Device: cuda
+CUDA Available: True
+CUDA Device Name: NVIDIA GeForce RTX 2060
+-----------------------------------
+Model Dimension (d): 3
+Model Architecture:
+Sequential(
+  (0): Linear(in_features=3, out_features=15, bias=True)
+  (1): Tanh()
+  (2): Linear(in_features=15, out_features=15, bias=True)
+  (3): Tanh()
+  (4): Linear(in_features=15, out_features=1, bias=True)
+  (5): Tanh()
+  (6): Linear(in_features=1, out_features=1, bias=True)
+  (7): Tanh()
+)
+Number of Samples: 6000
+Input Sampling Method: Latin Hypercube Sampling (LHS)
+-----------------------------------
+Optimizer: Adam
+Learning Rate: 0.005
+Loss Function: MSELoss
+-----------------------------------
+Algorithm: IPMNN
+Unique Parameters: {'omega': 0.5, 'gamma': 0}
+-----------------------------------
+Max Epochs: 3000
+Real Epochs: 309
+Early Stopping Threshold (eq_loss < epsilon1): 1e-05
+Early Stopping Threshold (eq_loss_k - ep_loss_k-1 < epsilon2): 1.0000000000000001e-07
+Theoretical Eigenvalue: 29.608813203268074
+=================Results==================
+
+Loss: 2.4940729140706797e-07
+Lambda_Error: 0.018516475632665674
+Eigen Value: 29.62732967890074
+U Loss:3.1352425410218954e-05
+Equation Loss:2.651597912514209e-06
+Average time per step: 0.022863 seconds
