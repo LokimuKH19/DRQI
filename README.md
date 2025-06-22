@@ -24,3 +24,6 @@ This repository provides a reproducible implementation of the DRQI-based eigenva
 - After several series of experiments we found: 
 - DRQI under different seeds, Adam optimizer: Suitable for larger lr (0.01). In contrast, IPMNN and DRM are advised to use 0.001.
 - We would carry out more experiments tommorrow.
+
+## 2025-06-22
+- 3.1.1 Finished
