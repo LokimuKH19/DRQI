@@ -26,4 +26,5 @@ This repository provides a reproducible implementation of the DRQI-based eigenva
 - We would carry out more experiments tommorrow.
 
 ## 2025-06-22
-- 3.1.1 Finished
+- More Laplace results finished
+- QMC is useful for imporve 2D results of DRM
