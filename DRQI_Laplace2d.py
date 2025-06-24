@@ -10,6 +10,7 @@ import random
 import os
 import json
 from datetime import datetime
+from scipy.stats import qmc
 
 
 def load_config():
@@ -32,7 +33,8 @@ def print_config(model, seed, epochs, real_epoch, epsilon1, epsilon2, avg_time, 
     config_lines.append(f"Model Dimension (d): {model.d}")
     config_lines.append(f"Model Architecture:\n{model.net}")
     config_lines.append(f"Number of Samples: {model.length}")
-    config_lines.append(f"Input Sampling Method: Latin Hypercube Sampling (LHS)")
+    sampling_method = config.get("sampling_method", "LHS").upper()
+    config_lines.append(f"Input Sampling Method: {sampling_method}")
     config_lines.append("-----------------------------------")
     config_lines.append(f"Optimizer: {model.optimizer.__class__.__name__}")
     config_lines.append(f"Learning Rate: {model.learning_rate}")
@@ -104,7 +106,13 @@ class PINN(nn.Module):
         self.mse = torch.nn.MSELoss(reduction='mean')
         self.loss = None
         self.algorithm = algorithm
-        x = lhs(self.d, self.length)
+        sampling_method = config.get("sampling_method", "LHS").upper()
+        if sampling_method == "QMC":
+            sampler = qmc.Sobol(d=self.d, scramble=True)
+            # if d=3, points_per_dimension is set to 2048, you would get 4915 samples, quite strange
+            x = sampler.random(n=self.length)
+        else:
+            x = lhs(self.d, self.length)
         self.x = [self.load_data(x[:, i:i+1]) for i in range(self.d)]
         u = np.random.rand(self.length, 1)
         u = u / np.linalg.norm(u)
@@ -124,10 +132,11 @@ class PINN(nn.Module):
         self.UTH = self.u_th()
         self.normalized_uth = (self.UTH-torch.min(self.UTH))/(torch.max(self.UTH)-torch.min(self.UTH))
 
-    # Laplace theoretical solution
-    def u_th(self):
-        # u_th(x) = ∏ sin(π x_i)
-        sin_terms = [torch.sin(np.pi * xi) for xi in self.x]
+    # Laplace theoretical solution, should be keep positive
+    def u_th(self, x_list=None):
+        if x_list is None:
+            x_list = self.x    # x_list is for density plot, do not change it
+        sin_terms = [torch.sin(np.pi * xi) for xi in x_list]
         u_exact = sin_terms[0]
         for i in range(1, self.d):
             u_exact *= sin_terms[i]
@@ -188,8 +197,10 @@ class PINN(nn.Module):
         self.lambda_k1 = lambda_k
         self.lambdas.append(lambda_k)
         self.losses.append(self.loss.item())
-        normalized_u = u / torch.norm(u)
-        self.u_loss = self.mse((u-torch.min(u))/(torch.max(u)-torch.min(u)), self.normalized_uth)
+        # this was employed in section 3.1.1 Fig2-8, but not good enough, we employed the latter one instead now
+        # normalized_u = u / torch.norm(u)
+        normalized_u = torch.abs(u) / torch.norm(u)  # to avoid sign ambiguities ABS could be added to the MSEE
+        self.u_loss = self.mse((u - torch.min(u)) / (torch.max(u) - torch.min(u)), self.normalized_uth)
         self.u_losses.append(self.u_loss.item())
         self.u = self.load_data(self.read_data(normalized_u), requires_grad=False)
         self.optimizer.step()
@@ -213,7 +224,7 @@ def train(model, epochs, epsilon1, epsilon2):
 
 # Main Process
 def main():
-    global ALGORITHM, D, SEED, EPOCHS, EPSILON1, EPSILON2, LEARNING_RATE, OMEGA, GAMMA, NET_STRUCTURE, POINTS_PER_DIM, OPTIMIZER
+    global ALGORITHM, D, SEED, EPOCHS, EPSILON1, EPSILON2, LEARNING_RATE, OMEGA, GAMMA, NET_STRUCTURE, POINTS_PER_DIM, OPTIMIZER, config
     config = load_config()
     ALGORITHM = config["algorithm"]
     D = config["dimension"]

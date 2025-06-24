@@ -8,6 +8,8 @@ import os
 import re
 import ast
 import numpy as np
+import matplotlib
+from scipy.stats import gaussian_kde
 from DRQI_Laplace2d import PINN
 from matplotlib.ticker import MaxNLocator
 import math
@@ -56,10 +58,10 @@ def parse_log_file(log_path):
 class App:
     def __init__(self, root):
         self.plot_config = {
-            "lambda": {"label": "absolute λ error", "color": COLORS[0]},
-            "loss": {"label": "loss function", "color": COLORS[1]},
-            "eq_loss": {"label": "equation loss function", "color": COLORS[2]},
-            "u_loss": {"label": "mean square u error", "color": COLORS[3]},
+            "lambda": {"label": "AEE", "color": COLORS[0]},
+            "loss": {"label": "LF", "color": COLORS[1]},
+            "eq_loss": {"label": "MSR", "color": COLORS[2]},
+            "u_loss": {"label": "MSEE", "color": COLORS[3]},
         }
         self.root = root
         self.root.title("PINN Training Visualization")
@@ -88,9 +90,13 @@ class App:
         control_frame.pack(side=tk.TOP, fill=tk.X, pady=5)
 
         self.plot_mode = tk.StringVar(value="combined error")
-        self.plot_options = ttk.Combobox(control_frame, textvariable=self.plot_mode, values=["combined error", "u(x)"], state="readonly")
+        self.plot_options = ttk.Combobox(control_frame, textvariable=self.plot_mode,
+                                         values=["combined error", "Function (1D only)", "Density"], state="readonly")
         self.plot_options.pack(side=tk.LEFT, padx=10)
-
+        tk.Label(control_frame, text="Sample Size in Density Plot:").pack(side=tk.LEFT, padx=(20, 5))
+        self.sample_size_entry = tk.Entry(control_frame, width=6)
+        self.sample_size_entry.pack(side=tk.LEFT)
+        self.sample_size_entry.insert(0, "5000")
         # Plot checkboxes
         self.plot_lambda = tk.BooleanVar(value=True)
         self.plot_loss = tk.BooleanVar(value=False)
@@ -267,6 +273,7 @@ class App:
             "eq_loss": np.array([x.detach().cpu().item() if torch.is_tensor(x) else float(x) for x in self.model.eq_losses]),
         }
 
+
     def plot_selected(self):
         yscale = self.y_scale.get()
         # 详细描述某个log的模式
@@ -293,26 +300,100 @@ class App:
                 self.ax.set_yscale(yscale)
                 self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
 
-            elif mode == "u(x)":
-                if self.model.d == 1:
-                    # Numpification
-                    x_tensor = self.model.x[0].detach().cpu()
-                    u_tensor = self.model.u.detach().cpu()
-                    x_np = x_tensor.numpy().flatten()
-                    u_np = u_tensor.numpy().flatten()
-                    # keep the order
+            elif mode == "Function (1D only)":
+                if self.model.d != 1:
+                    messagebox.showinfo("Not Supported", "Function plot only supported for 1D models.")
+                    return
+
+                try:
+                    sample_size = int(self.sample_size_entry.get())
+                except:
+                    sample_size = 5000
+
+                device = next(self.model.parameters()).device
+                d = self.model.d
+
+                X_raw = torch.rand(sample_size, d, dtype=torch.float64).to(device)
+                X_list = [X_raw[:, i:i + 1] for i in range(d)]
+
+                with torch.no_grad():
+                    u_pred = self.model.net_forward(X_list).cpu().numpy().squeeze()
+                    try:
+                        u_th = self.model.u_th(X_list).cpu().numpy().squeeze()
+                    except Exception as e:
+                        print("u_th Calculation Failed", e)
+                        u_th = None
+
+                    x_np = X_raw.cpu().numpy().flatten()
                     sort_idx = np.argsort(x_np)
                     x_sorted = x_np[sort_idx]
-                    u_sorted = np.abs(u_np[sort_idx])
-                    u_sorted = (u_sorted-np.min(u_sorted))/(np.max(u_sorted)-np.min(u_sorted))
+                    # to keep a positive result
+                    u_pred_sorted = np.abs(u_pred[sort_idx])
+                    # u_pred needs to be normalized
+                    u_pred_sorted = (u_pred_sorted-np.min(u_pred_sorted))/(np.max(u_pred_sorted)-np.min(u_pred_sorted) + 1e-9)
+                    # avoid error
+                    if u_th is not None:
+                        u_th_sorted = u_th[sort_idx]
+                        u_th = np.abs(u_th)
+                        u_th = (u_th - np.min(u_th)) / (np.max(u_th) - np.min(u_th) + 1e-9)
                     self.ax.clear()
                     self.ax.grid(True, linestyle='--', color='lightgray')
-                    self.ax.plot(x_sorted, u_sorted, color=COLORS[3])
-                    self.ax.set_title("u(x) Plot")
+                    self.ax.plot(x_sorted, u_pred_sorted, label="Prediction", color=COLORS[3])
+                    if u_th is not None:
+                        self.ax.plot(x_sorted, u_th_sorted, label="Theoretical", color="#000000", linestyle='-.')
                     self.ax.set_xlabel("x")
                     self.ax.set_ylabel("u(x)")
-                else:
-                    messagebox.showinfo("Not Supported", "u(x) only available for 1D models.")
+                    self.ax.set_title("Function Plot")
+                    self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
+
+            elif mode == "Density":
+                try:
+                    sample_size = int(self.sample_size_entry.get())
+                except:
+                    sample_size = 5000
+
+                d = self.model.d
+                device = next(self.model.parameters()).device
+
+                X_raw = torch.rand(sample_size, d, dtype=torch.float64).to(device)
+                X_list = [X_raw[:, i:i + 1] for i in range(d)]
+
+                with torch.no_grad():
+                    try:
+                        u_pred = self.model.net_forward(X_list).cpu().numpy().squeeze()
+                    except Exception as e:
+                        print("Prediction Failed", e)
+                        return
+
+                    # abs-normalization
+                    u_pred = np.abs(u_pred)
+                    u_pred = (u_pred - np.min(u_pred)) / (np.max(u_pred) - np.min(u_pred) + 1e-9)
+
+                    try:
+                        u_th = self.model.u_th(X_list).cpu().numpy().squeeze()
+                        u_th = np.abs(u_th)
+                        u_th = (u_th - np.min(u_th)) / (np.max(u_th) - np.min(u_th) + 1e-9)
+                    except Exception as e:
+                        print("u_th Calculation Failed", e)
+                        u_th = None
+
+                    self.ax.clear()
+                    self.ax.grid(True, linestyle='--', color='lightgray')
+                    pred_density, pred_bins, _ = self.ax.hist(
+                        u_pred, bins=100, density=True, alpha=0.7, label="Prediction", color=COLORS[0]
+                    )
+                    pred_integral = np.sum(pred_density * np.diff(pred_bins))
+                    print(f"Integral of predicted density: {pred_integral}")
+                    if u_th is not None:
+                        th_density, th_bins, _ = self.ax.hist(
+                            u_th, bins=100, density=True, alpha=0.3, label="Theoretical", color=COLORS[1]
+                        )
+                        th_integral = np.sum(th_density * np.diff(th_bins))
+                        print(f"Integral of theoretical density: {th_integral}")
+                    self.ax.set_xlabel("u")
+                    self.ax.set_ylabel("Density")
+                    self.ax.set_title("u(x) Density")
+                    self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
 
         # 比较模式
         elif self.mode.get() == "comparative":
@@ -358,19 +439,20 @@ class App:
 
         self.ax.clear()
         self.ax.grid(True, linestyle='--', color='lightgray')
-
+        translate = {"lambda": "AEE", "loss": "LF",
+                     "eq_loss": "MSR", "u_loss": "MSEE"}
+        # use formal expression
         if plot_type in ["lambda", "loss", "eq_loss", "u_loss"]:
             for i, algo in enumerate(["DRM", "IPMNN", "DRQI"]):
                 if algo not in algorithms:
                     continue
                 y_data = algorithms[algo][plot_type]
                 x_axis = list(range(len(y_data)))
-                label = f"{algo} {plot_type.replace('_', ' ')}"
+                label = f"{algo}"
                 style = '-'
                 self.ax.plot(x_axis, y_data, label=label, color=COLORS[i], linestyle=style)
             self.ax.set_xlabel("Epoch")
-            self.ax.set_ylabel("Value")
-            self.ax.set_title(f"{plot_type.replace('_', ' ').title()} Comparison")
+            self.ax.set_ylabel(f"{translate[plot_type]}")
             self.ax.set_yscale(yscale)
             self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
 
@@ -410,7 +492,6 @@ class App:
 
             algo = info['algorithm']
             value = None
-
             if plot_type == "lambda":
                 value = float(info['lambda_error'])
             elif plot_type == "loss":
@@ -419,7 +500,7 @@ class App:
                 value = float(info['eq_loss'])
             elif plot_type == "u_loss":
                 value = float(info['u_loss'])
-            elif plot_type == "u":
+            else:
                 messagebox.showerror("Error", "Multi log mode does not support u(x) point cloud.")
                 return
             if value is not None and algo in grouped:
@@ -432,10 +513,10 @@ class App:
                 self.ax.scatter([algo] * len(values), values, label=algo, color=COLORS[i])
 
         ylabel_map = {
-            "lambda": "|lambda - lambda*|",
-            "loss": "Final Loss",
-            "eq_loss": "Equation Loss",
-            "u_loss": "Mean square u error"
+            "lambda": "AEE",
+            "loss": "LF",
+            "eq_loss": "MSR",
+            "u_loss": "MSEE"
         }
 
         self.ax.set_title(f"{ylabel_map.get(plot_type, 'Metric')} Point Cloud")
@@ -446,9 +527,106 @@ class App:
         self.canvas.draw()
 
     def save_figure(self):
-        file_path = filedialog.asksaveasfilename(defaultextension=".png", filetypes=[("PNG Image", "*.png")])
-        if file_path:
-            self.fig.savefig(file_path, dpi=300)
+        default_dir = "./figures"
+        os.makedirs(default_dir, exist_ok=True)
+
+        d = self.current_data.get('dimension', 'D') if self.current_data else 'D'
+        optimizer = self.current_data.get('optimizer', 'Opt') if self.current_data else 'Opt'
+        lr = self.current_data.get('learning_rate', 'LR') if self.current_data else 'LR'
+        seed = self.current_data.get('seed', 'Seed') if self.current_data else 'Seed'
+
+        if self.mode.get() == "single":
+            y_initial = self.current_data.get("algorithm", "Alg")
+        elif self.mode.get() == "comparative":
+            translate = {"lambda": "AEE", "loss": "LF",
+                         "eq_loss": "MSR", "u_loss": "MSEE"}
+            y_initial = translate.get(self.comparative_plot_type.get(), "Y")
+        else:
+            y_initial = 'Y'
+
+        lr_str = str(lr).replace('.', 'p').replace('e', 'e').replace('+', '').replace('-', 'm')
+
+        default_filename = f"{d}-{optimizer}-LR{lr_str}-SEED{seed}-{y_initial}.png"
+
+        # todo BUG exists in the filename function
+        file_path = filedialog.asksaveasfilename(
+            initialdir=default_dir,
+            initialfile=default_filename,
+            defaultextension=".png",
+            filetypes=[("PNG Image", "*.png")],
+            title="Save Figure As"
+        )
+        if not file_path:
+            return
+        # todo Change the DPI and the size here, 3.5 2.5 is preferred
+        temp_fig, temp_ax = plt.subplots(figsize=(5.0, 2.5), dpi=600)
+        # Copy all components to the new figure
+        for line in self.ax.get_lines():
+            temp_ax.plot(line.get_xdata(), line.get_ydata(), color=line.get_color(),
+                         linestyle=line.get_linestyle(), label=line.get_label())
+
+        for col in self.ax.collections:
+            offsets = col.get_offsets()
+            if offsets is not None and len(offsets) > 0:
+                xy = offsets.data
+                facecolors = col.get_facecolors()
+                sizes = col.get_sizes()
+                color = facecolors[0] if len(facecolors) > 0 else 'blue'
+                size = sizes[0] if len(sizes) > 0 else 20
+                temp_ax.scatter(xy[:, 0], xy[:, 1], c=[color], s=size, label=col.get_label())
+
+        for container in self.ax.containers:
+            if isinstance(container, matplotlib.container.BarContainer):
+                label = container.get_label()
+                if label.startswith("_"):
+                    label = None
+                patches = []
+                for patch in container.patches:
+                    fc = patch.get_facecolor()
+                    facecolor = tuple(fc[0]) if isinstance(fc, np.ndarray) and fc.ndim == 2 else fc
+                    temp_patch = matplotlib.patches.Rectangle(
+                        (patch.get_x(), patch.get_y()),
+                        patch.get_width(),
+                        patch.get_height(),
+                        facecolor=facecolor,
+                        alpha=patch.get_alpha()
+                    )
+                    temp_ax.add_patch(temp_patch)
+                    patches.append(temp_patch)
+
+        temp_ax.set_xlim(self.ax.get_xlim())
+        temp_ax.set_ylim(self.ax.get_ylim())
+
+        temp_ax.set_xlabel(self.ax.get_xlabel())
+        temp_ax.set_ylabel(self.ax.get_ylabel())
+
+        temp_ax.set_xticks(self.ax.get_xticks())
+        temp_ax.set_yticks(self.ax.get_yticks())
+        temp_ax.set_xticklabels([tick.get_text() for tick in self.ax.get_xticklabels()], fontsize=plt.rcParams['xtick.labelsize'] )
+        temp_ax.set_yticklabels([tick.get_text() for tick in self.ax.get_yticklabels()], fontsize=plt.rcParams['ytick.labelsize'] )
+
+        temp_ax.set_yscale(self.ax.get_yscale())
+
+        temp_ax.grid(True, linestyle='--', color='lightgray')
+        if self.plot_mode.get() == "Density":
+            temp_ax.legend(handles=[
+                matplotlib.patches.Patch(color=COLORS[0], alpha=0.7, label="Prediction"),
+                matplotlib.patches.Patch(color=COLORS[1], alpha=0.3, label="Theoretical")
+            ], loc='upper right', framealpha=0.5, fontsize=plt.rcParams['legend.fontsize'])
+            temp_ax.set_xlabel
+        else:
+            temp_ax.legend(loc='upper right', framealpha=0.5, fontsize=plt.rcParams['legend.fontsize'])
+
+        temp_fig.tight_layout(pad=1.0)
+
+        # 保存
+        try:
+            temp_fig.savefig(file_path, dpi=600, bbox_inches='tight')
+            messagebox.showinfo("Success", f"Figure saved:\n{file_path}")
+        except Exception as e:
+            messagebox.showerror("Save Failed", str(e))
+        finally:
+            plt.close(temp_fig)
 
 
 if __name__ == '__main__':
