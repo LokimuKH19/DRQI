@@ -29,6 +29,7 @@ This repository provides a reproducible implementation of the DRQI-based eigenva
 ## 2025-6-26 Major Update
 - Fokker-Plank Problems can be solved through these package now
 - Density Plot supported
+- Omega Plot supported
 
 ## Some known issues has not been completely solved 
 - In some log files "The Lambda Error" is not correct. However, in the UI we managed to avoid this problem by manually update the theoretical solution.
@@ -36,4 +37,4 @@ This repository provides a reproducible implementation of the DRQI-based eigenva
 - The pre-training mentioned in the original manuscript has to be done manually, by switching the loss in the 2 main programs. (The current log files are not involved)
 - In extremely rare cases, sometimes the model without pre-training still might convergence to high ordered eigenpairs.
 - The save figure function has problems on nomenclature of the figures.
-- Some annotations were written in Chinese in the program files.
+- Some minor annotations were written in Chinese in the program files.
