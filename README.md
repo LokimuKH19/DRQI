@@ -33,7 +33,7 @@ This repository provides a reproducible implementation of the DRQI-based eigenva
 ## Some known issues has not been completely solved 
 - In some log files "The Lambda Error" is not correct. However, in the UI we managed to avoid this problem by manually update the theoretical solution.
 - the MSEE was imporved after June 23. However, the type-B convergences in related paper are still observed especially in periodic problems. We belive that this issue is mainly caused by the phase shift of the eigenfunction. Maybe the Pearson correlation coefficient is more suitable for monitoring the convergence of the trail function during training.
-- The pre-training function has to be done manually, by switching the loss in the 2 main programs.
+- The pre-training function has to be done manually, by switching the loss in the 2 main programs. (The current log files are not currently involved)
 - In extremely rare cases, sometimes the model without pre-training still might convergence to high ordered eigenpairs.
 - The save figure function has problems on nomenclature of the figures.
 - Some annotation is written in Chinese in the program files.
