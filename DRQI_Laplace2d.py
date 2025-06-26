@@ -200,6 +200,7 @@ class PINN(nn.Module):
         # this was employed in section 3.1.1 Fig2-8, but not good enough, we employed the latter one instead now
         # normalized_u = u / torch.norm(u)
         normalized_u = torch.abs(u) / torch.norm(u)  # to avoid sign ambiguities ABS could be added to the MSEE
+        # phase shift phenomenon could be controlled by the decoration of phi, to some extent
         self.u_loss = self.mse((u - torch.min(u)) / (torch.max(u) - torch.min(u)), self.normalized_uth)
         self.u_losses.append(self.u_loss.item())
         self.u = self.load_data(self.read_data(normalized_u), requires_grad=False)
@@ -244,6 +245,7 @@ def main():
     model = PINN(D, ALGORITHM)
     real_epoch, avg_time = train(model, epochs=EPOCHS, epsilon1=EPSILON1, epsilon2=EPSILON2)
     time_stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    # Adam is only a name, it does not reflect anything. It's a historical problem.
     with open(f'models/{ALGORITHM}_LP_{D}D_OMEGA{model.unique_parameter["omega"]}_SEED{SEED}_Adam_{time_stamp}.pkl', 'wb') as fi:
         pickle.dump(model, fi)
     print_config(model, SEED, EPOCHS, real_epoch, EPSILON1, EPSILON2, avg_time, time_stamp)

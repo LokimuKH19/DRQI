@@ -11,6 +11,7 @@ import numpy as np
 import matplotlib
 from scipy.stats import gaussian_kde
 from DRQI_Laplace2d import PINN
+from DRQI_FokkerPlank2d import MPINN
 from matplotlib.ticker import MaxNLocator
 import math
 import matplotlib.font_manager as fm
@@ -26,7 +27,7 @@ plt.rcParams['xtick.labelsize'] = 12
 plt.rcParams['ytick.labelsize'] = 12
 
 
-def parse_log_file(log_path):
+def parse_log_file(log_path, theoretical=None):
     with open(log_path, 'r') as f:
         content = f.read()
 
@@ -48,10 +49,11 @@ def parse_log_file(log_path):
         'epsilon1': extract(r'\(eq_loss < epsilon1\): ([\d\.eE+-]+)'),
         'epsilon2': extract(r'\(eq_loss_k - ep_loss_k-1 < epsilon2\): ([\d\.eE+-]+)'),
         'final_loss': extract(r'Loss: ([\d\.eE+-]+)'),
-        'lambda_error': extract(r'Lambda_Error: ([\d\.eE+-]+)'),
         'eigen_value': extract(r'Eigen Value: ([\d\.eE+-]+)'),
+        'lambda_error': abs(float(extract(r'Eigen Value: ([\d\.eE+-]+)'))-theoretical) if theoretical else extract(r'Lambda_Error: ([\d\.eE+-]+)'),
         'eq_loss': extract(r'Equation Loss:([\d\.eE+-]+)'),
         'u_loss': extract(r'U Loss:([\d\.eE+-]+)'),
+        'sampling_method': extract(r"Input Sampling Method: (\w+)")
     }
 
 
@@ -73,6 +75,7 @@ class App:
         self.theoretical_lambda = None
         self.current_data = None
         self.create_widgets()
+        self.problem = "LP"
 
     def create_widgets(self):
         top_frame = tk.Frame(self.root)
@@ -230,8 +233,8 @@ class App:
             paths = filedialog.askopenfilenames(filetypes=[("Log files", "*.log")])
             if not paths:
                 return
-            if self.mode.get() == "comparative" and len(paths) != 3:
-                messagebox.showerror("Error", "Comparative mode requires exactly 3 logs (DRM, IPMNN, DRQI).")
+            if self.mode.get() == "comparative" and len(paths) > 3:
+                messagebox.showerror("Error", "Comparative mode requires less than 3 logs.")
                 return
             self.file_list.delete(0, tk.END)
             for p in paths:
@@ -253,12 +256,15 @@ class App:
         text.config(state=tk.DISABLED)
 
     def load_model(self, log_path):
-        data = parse_log_file(log_path)
+        data = parse_log_file(log_path, self.theoretical_lambda)
+        self.problem = "LP"
+        if "_FP_" in log_path:
+            self.problem = "FP"
         self.current_data = data  # Save Current Parsed Data
         timestamp = re.search(r"\d{8}_\d{6}", os.path.basename(log_path)).group(0)
         algorithm, d, seed = data["algorithm"], data["dimension"], data["seed"]
         omega = ast.literal_eval(data["unique_param"]).get("omega", None)
-        base = f"{algorithm}_LP_{d}D_OMEGA{omega}_SEED{seed}_Adam_{timestamp}.pkl"
+        base = f"{algorithm}_{self.problem}_{d}D_OMEGA{omega}_SEED{seed}_Adam_{timestamp}.pkl"
         model_path = os.path.join("models", base)
         if not os.path.exists(model_path):
             messagebox.showerror("Model Missing", f"Model file not found: {model_path}")
@@ -272,7 +278,6 @@ class App:
             "u_loss": np.array([x.detach().cpu().item() if torch.is_tensor(x) else float(x) for x in self.model.u_losses]),
             "eq_loss": np.array([x.detach().cpu().item() if torch.is_tensor(x) else float(x) for x in self.model.eq_losses]),
         }
-
 
     def plot_selected(self):
         yscale = self.y_scale.get()
@@ -295,7 +300,7 @@ class App:
                 if self.plot_u_loss.get():
                     self.ax.plot(x_axis, self.plot_data["u_loss"], color=self.plot_config["u_loss"]["color"], label=self.plot_config["u_loss"]["label"])
                 self.ax.set_title("")
-                self.ax.set_xlabel("")
+                self.ax.set_xlabel("Epoch")
                 self.ax.set_ylabel("Value")
                 self.ax.set_yscale(yscale)
                 self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
@@ -313,7 +318,8 @@ class App:
                 device = next(self.model.parameters()).device
                 d = self.model.d
 
-                X_raw = torch.rand(sample_size, d, dtype=torch.float64).to(device)
+                amplitude = {"LP": 1, "FP": 2*torch.pi}
+                X_raw = torch.rand(sample_size, d, dtype=torch.float64).to(device)*amplitude[self.problem]
                 X_list = [X_raw[:, i:i + 1] for i in range(d)]
 
                 with torch.no_grad():
@@ -334,8 +340,8 @@ class App:
                     # avoid error
                     if u_th is not None:
                         u_th_sorted = u_th[sort_idx]
-                        u_th = np.abs(u_th)
-                        u_th = (u_th - np.min(u_th)) / (np.max(u_th) - np.min(u_th) + 1e-9)
+                        u_th_sorted = np.abs(u_th_sorted)
+                        u_th_sorted = (u_th_sorted - np.min(u_th_sorted)) / (np.max(u_th_sorted) - np.min(u_th_sorted) + 1e-9)
                     self.ax.clear()
                     self.ax.grid(True, linestyle='--', color='lightgray')
                     self.ax.plot(x_sorted, u_pred_sorted, label="Prediction", color=COLORS[3])
@@ -406,14 +412,17 @@ class App:
         self.apply_manual_axes()
         self.canvas.draw()
 
-    # 比较模式的绘图
+    # compare mode
     def plot_comparative_log(self):
         plot_type = self.comparative_plot_type.get()
         yscale = self.y_scale.get()
 
         algorithms = {}
         for path in self.log_files:
-            info = parse_log_file(path)
+            PROBLEM = "LP"
+            if "_FP_" in path:
+                PROBLEM = "FP"
+            info = parse_log_file(path, self.theoretical_lambda)
             if not info['dimension']:
                 continue
             algo = info['algorithm']
@@ -421,7 +430,7 @@ class App:
                 algorithms[algo] = {"lambda": [], "loss": [], "eq_loss": [], "u_loss": [], "model": None}
             timestamp = re.search(r"\d{8}_\d{6}", os.path.basename(path)).group(0)
             omega = ast.literal_eval(info["unique_param"]).get("omega", None)
-            base = f"{info['algorithm']}_LP_{info['dimension']}D_OMEGA{omega}_SEED{info['seed']}_Adam_{timestamp}.pkl"
+            base = f"{info['algorithm']}_{PROBLEM}_{info['dimension']}D_OMEGA{omega}_SEED{info['seed']}_Adam_{timestamp}.pkl"
             model_path = os.path.join("models", base)
             if os.path.exists(model_path):
                 with open(model_path, 'rb') as f:
@@ -436,7 +445,6 @@ class App:
                     algorithms[algo]["loss"] = model.losses
                     algorithms[algo]["u_loss"] = model.u_losses
                     algorithms[algo]["eq_loss"] = [x.detach().cpu().item() for x in model.eq_losses]
-
         self.ax.clear()
         self.ax.grid(True, linestyle='--', color='lightgray')
         translate = {"lambda": "AEE", "loss": "LF",
@@ -453,26 +461,32 @@ class App:
                 self.ax.plot(x_axis, y_data, label=label, color=COLORS[i], linestyle=style)
             self.ax.set_xlabel("Epoch")
             self.ax.set_ylabel(f"{translate[plot_type]}")
+            self.ax.xaxis.set_major_locator(MaxNLocator(nbins=5))
             self.ax.set_yscale(yscale)
             self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
 
         elif plot_type == "u":
-            dim = algorithms["DRM"]["model"].d if "DRM" in algorithms else None
+            dim = None
+            for algo in ["DRM", "IPMNN", "DRQI"]:
+                if algo in algorithms and algorithms[algo]["model"]:
+                    dim = algorithms[algo]["model"].d
+                    break
             if dim != 1:
                 messagebox.showinfo("Not Supported", "u(x) comparison only supported for 1D models.")
                 return
-            for i, algo in enumerate(["DRM", "IPMNN", "DRQI"]):
+            for algo in ["DRM", "IPMNN", "DRQI"]:
                 if algo not in algorithms or not algorithms[algo]["model"]:
                     continue
+                algo_colors = {"DRM": COLORS[0], "IPMNN": COLORS[1], "DRQI": COLORS[2]}
                 model = algorithms[algo]["model"]
                 x_tensor = model.x[0].detach().cpu()
                 u_tensor = model.u.detach().cpu()
                 x_np = x_tensor.numpy().flatten()
                 u_np = u_tensor.numpy().flatten()
                 u_np = np.abs(u_np)
-                u_np = (u_np-np.min(u_np))/(np.max(u_np)-np.min(u_np))
+                u_np = (u_np - np.min(u_np)) / (np.max(u_np) - np.min(u_np))
                 sort_idx = np.argsort(x_np)
-                self.ax.plot(x_np[sort_idx], u_np[sort_idx], label=algo, color=COLORS[i])
+                self.ax.plot(x_np[sort_idx], u_np[sort_idx], label=algo, color=algo_colors[algo])
             self.ax.set_xlabel("x")
             self.ax.set_ylabel("u(x)")
             self.ax.set_title("u(x) Comparison")
@@ -486,14 +500,15 @@ class App:
         grouped = {"DRM": [], "IPMNN": [], "DRQI": []}
 
         for path in self.log_files:
-            info = parse_log_file(path)
+            info = parse_log_file(path, self.theoretical_lambda)
             if not info['dimension']:
                 continue
 
             algo = info['algorithm']
             value = None
             if plot_type == "lambda":
-                value = float(info['lambda_error'])
+                # avoid the mis-record of lambda_error
+                value = abs(float(info['eigen_value']) - self.theoretical_lambda)
             elif plot_type == "loss":
                 value = float(info['final_loss'])
             elif plot_type == "eq_loss":
@@ -559,7 +574,7 @@ class App:
         if not file_path:
             return
         # todo Change the DPI and the size here, 3.5 2.5 is preferred
-        temp_fig, temp_ax = plt.subplots(figsize=(5.0, 2.5), dpi=600)
+        temp_fig, temp_ax = plt.subplots(figsize=(5.0, 3.0), dpi=600)
         # Copy all components to the new figure
         for line in self.ax.get_lines():
             temp_ax.plot(line.get_xdata(), line.get_ydata(), color=line.get_color(),

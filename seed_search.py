@@ -3,11 +3,11 @@ import subprocess
 import copy
 
 # Basic settings
-BASE_CONFIG_PATH = "CONFIG_DIRICHLET.json"
-DYNAMIC_CONFIG_PATH = "config_dynamic.json"
-MAIN_SCRIPT = "DRQI_Laplace2d.py"
-algorithms = ["DRQI", "DRM", "IPMNN"]
-seed_range = range(28, 33)  # 25 - 34
+BASE_CONFIG_PATH = "CONFIG_PERIODIC.json"     # Select the basic configurations for different problem
+DYNAMIC_CONFIG_PATH = "config_dynamic.json"    # DO NOT CHANGE
+MAIN_SCRIPT = "DRQI_FokkerPlank2d.py"  # "DRQI_Laplace2d.py"    # change the problems here
+algorithms = ["DRQI"]#"IPMNN", "DRM",]
+seed_range = range(30, 31)   # select the random seed range
 
 # load base config
 with open(BASE_CONFIG_PATH, "r") as f:
