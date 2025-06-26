@@ -74,8 +74,10 @@ class App:
         self.plot_data = None
         self.theoretical_lambda = None
         self.current_data = None
+        self.omega_mode = tk.BooleanVar(value=False)
         self.create_widgets()
         self.problem = "LP"
+
 
     def create_widgets(self):
         top_frame = tk.Frame(self.root)
@@ -131,16 +133,38 @@ class App:
         self.comparative_plot_type = tk.StringVar(value="lambda")  # 默认选 lambda error
         self.comparative_plot_frame = tk.Frame(control_frame)
         self.comparative_plot_frame.pack_forget()  # 初始不显示
-        self.radio_lambda = tk.Radiobutton(self.comparative_plot_frame, text="λ Error", variable=self.comparative_plot_type, value="lambda")
-        self.radio_loss = tk.Radiobutton(self.comparative_plot_frame, text="Loss", variable=self.comparative_plot_type, value="loss")
-        self.radio_u_loss = tk.Radiobutton(self.comparative_plot_frame, text="U Loss", variable=self.comparative_plot_type, value="u_loss")
-        self.radio_eq_loss = tk.Radiobutton(self.comparative_plot_frame, text="Eq. Loss", variable=self.comparative_plot_type, value="eq_loss")
-        self.radio_u = tk.Radiobutton(self.comparative_plot_frame, text="u(x)", variable=self.comparative_plot_type, value="u")
-        self.radio_lambda.pack(side=tk.LEFT)
-        self.radio_loss.pack(side=tk.LEFT)
-        self.radio_u_loss.pack(side=tk.LEFT)
-        self.radio_eq_loss.pack(side=tk.LEFT)
-        self.radio_u.pack(side=tk.LEFT)
+
+        top_radio_frame = tk.Frame(self.comparative_plot_frame)
+        top_radio_frame.pack(side=tk.TOP, anchor='w', pady=2)
+        self.radio_lambda = tk.Radiobutton(top_radio_frame, text="λ Error", variable=self.comparative_plot_type,
+                                           value="lambda")
+        self.radio_loss = tk.Radiobutton(top_radio_frame, text="Loss", variable=self.comparative_plot_type,
+                                         value="loss")
+        self.radio_u_loss = tk.Radiobutton(top_radio_frame, text="U Loss", variable=self.comparative_plot_type,
+                                           value="u_loss")
+        self.radio_eq_loss = tk.Radiobutton(top_radio_frame, text="Eq. Loss", variable=self.comparative_plot_type,
+                                            value="eq_loss")
+        self.radio_u = tk.Radiobutton(top_radio_frame, text="u(x)", variable=self.comparative_plot_type, value="u")
+        self.radio_lambda.pack(side=tk.LEFT, padx=5)
+        self.radio_loss.pack(side=tk.LEFT, padx=5)
+        self.radio_u_loss.pack(side=tk.LEFT, padx=5)
+        self.radio_eq_loss.pack(side=tk.LEFT, padx=5)
+        self.radio_u.pack(side=tk.LEFT, padx=5)
+
+        omega_radio_frame = tk.Frame(self.comparative_plot_frame)
+        omega_radio_frame.pack(side=tk.TOP, anchor='e', pady=2)
+        self.radio_omega_lambda = tk.Radiobutton(omega_radio_frame, text="ω-AEE", variable=self.comparative_plot_type,
+                                                 value="omega_lambda")
+        self.radio_omega_loss = tk.Radiobutton(omega_radio_frame, text="ω-LF", variable=self.comparative_plot_type,
+                                               value="omega_loss")
+        self.radio_omega_eq_loss = tk.Radiobutton(omega_radio_frame, text="ω-MSR", variable=self.comparative_plot_type,
+                                                  value="omega_eq_loss")
+        self.radio_omega_u_loss = tk.Radiobutton(omega_radio_frame, text="ω-MSEE", variable=self.comparative_plot_type,
+                                                 value="omega_u_loss")
+        self.radio_omega_lambda.pack(side=tk.LEFT, padx=5)
+        self.radio_omega_loss.pack(side=tk.LEFT, padx=5)
+        self.radio_omega_eq_loss.pack(side=tk.LEFT, padx=5)
+        self.radio_omega_u_loss.pack(side=tk.LEFT, padx=5)
 
         self.fig, self.ax = plt.subplots(figsize=(10, 6), dpi=100)
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
@@ -168,6 +192,8 @@ class App:
         self.ymax_entry.pack(side=tk.LEFT)
         self.ymax_entry.insert(0, "")
 
+        self.update_omega_radio_state()
+
     def apply_manual_axes(self):
         if not self.manual_axis.get():
             return
@@ -190,6 +216,13 @@ class App:
         except Exception as e:
             messagebox.showerror("Error", f"Invalid expression: {e}")
 
+    def update_omega_radio_state(self):
+        state = tk.NORMAL if self.omega_mode.get() else tk.DISABLED
+        self.radio_omega_lambda.config(state=state)
+        self.radio_omega_loss.config(state=state)
+        self.radio_omega_eq_loss.config(state=state)
+        self.radio_omega_u_loss.config(state=state)
+
     def reset(self):
         self.file_list.delete(0, tk.END)
         self.log_files = []
@@ -204,8 +237,12 @@ class App:
             self.plot_u_loss.set(False)
             self.plot_loss.set(False)
             self.plot_eq_loss.set(False)
+            self.omega_mode.set(mode == "comparative")  # 只有 comparative 模式才允许启用 ω 比较
+            self.update_omega_radio_state()
         else:
             self.comparative_plot_frame.pack_forget()
+            self.omega_mode.set(False)
+            self.update_omega_radio_state()
 
         if mode == "multi":
             self.manual_axis.set(False)  # 强制取消勾选
@@ -233,8 +270,8 @@ class App:
             paths = filedialog.askopenfilenames(filetypes=[("Log files", "*.log")])
             if not paths:
                 return
-            if self.mode.get() == "comparative" and len(paths) > 3:
-                messagebox.showerror("Error", "Comparative mode requires less than 3 logs.")
+            if self.mode.get() == "comparative" and len(paths) > 4:
+                messagebox.showerror("Error", "Comparative mode requires less than 4 logs.")
                 return
             self.file_list.delete(0, tk.END)
             for p in paths:
@@ -416,52 +453,90 @@ class App:
     def plot_comparative_log(self):
         plot_type = self.comparative_plot_type.get()
         yscale = self.y_scale.get()
+        translate = {"lambda": "AEE", "loss": "LF", "eq_loss": "MSR", "u_loss": "MSEE"}
+        omega_compare_mode = plot_type.startswith("omega_")
+        metric, omega_logs, algorithms = None, None, None
+        if omega_compare_mode:
+            metric = plot_type.replace("omega_", "")
+            omega_logs = {}  # omega: (label, color, data)
+        else:
+            algorithms = {}
 
-        algorithms = {}
-        for path in self.log_files:
+        for i, path in enumerate(self.log_files):
             PROBLEM = "LP"
             if "_FP_" in path:
                 PROBLEM = "FP"
             info = parse_log_file(path, self.theoretical_lambda)
             if not info['dimension']:
                 continue
-            algo = info['algorithm']
-            if algo not in algorithms:
-                algorithms[algo] = {"lambda": [], "loss": [], "eq_loss": [], "u_loss": [], "model": None}
             timestamp = re.search(r"\d{8}_\d{6}", os.path.basename(path)).group(0)
-            omega = ast.literal_eval(info["unique_param"]).get("omega", None)
-            base = f"{info['algorithm']}_{PROBLEM}_{info['dimension']}D_OMEGA{omega}_SEED{info['seed']}_Adam_{timestamp}.pkl"
+            omega = round(float(ast.literal_eval(info["unique_param"]).get("omega", 0.0)), 2)
+            algo = info["algorithm"]
+            base = f"{algo}_{PROBLEM}_{info['dimension']}D_OMEGA{omega}_SEED{info['seed']}_Adam_{timestamp}.pkl"
             model_path = os.path.join("models", base)
-            if os.path.exists(model_path):
-                with open(model_path, 'rb') as f:
-                    model = pickle.load(f)
-                    algorithms[algo]["model"] = model
-                    # 要填写theoretical lambda才能有反应
-                    if self.theoretical_lambda:
-                        lambda_error = np.abs(np.array(model.lambdas) - self.theoretical_lambda)
-                    else:
-                        lambda_error = [0] * len(model.lambdas)
-                    algorithms[algo]["lambda"] = lambda_error
-                    algorithms[algo]["loss"] = model.losses
-                    algorithms[algo]["u_loss"] = model.u_losses
-                    algorithms[algo]["eq_loss"] = [x.detach().cpu().item() for x in model.eq_losses]
+
+            if not os.path.exists(model_path):
+                continue
+
+            with open(model_path, 'rb') as f:
+                model = pickle.load(f)
+
+            if omega_compare_mode:
+                if self.theoretical_lambda:
+                    lambda_error = np.abs(np.array(model.lambdas) - self.theoretical_lambda)
+                else:
+                    lambda_error = [0] * len(model.lambdas)
+
+                metric_data = {
+                    "lambda": lambda_error,
+                    "loss": model.losses,
+                    "eq_loss": [x.detach().cpu().item() for x in model.eq_losses],
+                    "u_loss": model.u_losses
+                }.get(metric, [])
+
+                if omega not in omega_logs:
+                    color_idx = [0.2, 0.4, 0.6, 0.8].index(omega) if omega in [0.2, 0.4, 0.6, 0.8] else i
+                    omega_logs[omega] = {
+                        "data": metric_data,
+                        "color": COLORS[color_idx],
+                        "label": f"ω={omega}"
+                    }
+            else:
+                if algo not in algorithms:
+                    algorithms[algo] = {"lambda": [], "loss": [], "eq_loss": [], "u_loss": [], "model": None}
+                algorithms[algo]["model"] = model
+                if self.theoretical_lambda:
+                    lambda_error = np.abs(np.array(model.lambdas) - self.theoretical_lambda)
+                else:
+                    lambda_error = [0] * len(model.lambdas)
+                algorithms[algo]["lambda"] = lambda_error
+                algorithms[algo]["loss"] = model.losses
+                algorithms[algo]["u_loss"] = model.u_losses
+                algorithms[algo]["eq_loss"] = [x.detach().cpu().item() for x in model.eq_losses]
+
         self.ax.clear()
         self.ax.grid(True, linestyle='--', color='lightgray')
-        translate = {"lambda": "AEE", "loss": "LF",
-                     "eq_loss": "MSR", "u_loss": "MSEE"}
-        # use formal expression
-        if plot_type in ["lambda", "loss", "eq_loss", "u_loss"]:
+
+        if omega_compare_mode:
+            for omega in sorted(omega_logs.keys()):
+                entry = omega_logs[omega]
+                y_data = entry["data"]
+                x_axis = list(range(len(y_data)))
+                self.ax.plot(x_axis, y_data, label=entry["label"], color=entry["color"], linestyle='-')
+            self.ax.set_xlabel("Epoch")
+            self.ax.set_ylabel(translate.get(metric, metric.upper()))
+            self.ax.set_yscale(yscale)
+            self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
+        elif plot_type in ["lambda", "loss", "eq_loss", "u_loss"]:
+            translate = {"lambda": "AEE", "loss": "LF", "eq_loss": "MSR", "u_loss": "MSEE"}
             for i, algo in enumerate(["DRM", "IPMNN", "DRQI"]):
                 if algo not in algorithms:
                     continue
                 y_data = algorithms[algo][plot_type]
                 x_axis = list(range(len(y_data)))
-                label = f"{algo}"
-                style = '-'
-                self.ax.plot(x_axis, y_data, label=label, color=COLORS[i], linestyle=style)
+                self.ax.plot(x_axis, y_data, label=algo, color=COLORS[i], linestyle='-')
             self.ax.set_xlabel("Epoch")
-            self.ax.set_ylabel(f"{translate[plot_type]}")
-            self.ax.xaxis.set_major_locator(MaxNLocator(nbins=5))
+            self.ax.set_ylabel(translate.get(plot_type, plot_type.upper()))
             self.ax.set_yscale(yscale)
             self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
 
@@ -491,6 +566,51 @@ class App:
             self.ax.set_ylabel("u(x)")
             self.ax.set_title("u(x) Comparison")
             self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
+
+        elif plot_type in ["omega_lambda", "omega_loss", "omega_eq_loss", "omega_u_loss"]:
+            omega_map = {0.2: COLORS[0], 0.4: COLORS[1], 0.6: COLORS[2], 0.8: COLORS[3]}
+            metric_key = plot_type.replace("omega_", "")
+            self.ax.clear()
+            self.ax.grid(True, linestyle='--', color='lightgray')
+            for path in self.log_files:
+                info = parse_log_file(path, self.theoretical_lambda)
+                if not info or info["algorithm"] != "DRQI":
+                    continue
+                omega_val = round(ast.literal_eval(info["unique_param"]).get("omega", None), 2)
+                if omega_val not in omega_map:
+                    continue
+                timestamp = re.search(r"\d{8}_\d{6}", os.path.basename(path)).group(0)
+                PROBLEM = "FP" if "_FP_" in path else "LP"
+                base = f"DRQI_{PROBLEM}_{info['dimension']}D_OMEGA{omega_val}_SEED{info['seed']}_Adam_{timestamp}.pkl"
+                model_path = os.path.join("models", base)
+                if not os.path.exists(model_path):
+                    continue
+                with open(model_path, 'rb') as f:
+                    model = pickle.load(f)
+                    if metric_key == "lambda":
+                        y_data = np.abs(np.array(model.lambdas) - self.theoretical_lambda)
+                    elif metric_key == "loss":
+                        y_data = model.losses
+                    elif metric_key == "eq_loss":
+                        y_data = [x.detach().cpu().item() for x in model.eq_losses]
+                    elif metric_key == "u_loss":
+                        y_data = [x.detach().cpu().item() for x in model.u_losses]
+                    else:
+                        continue
+                    x_data = list(range(len(y_data)))
+                    self.ax.plot(x_data, y_data, label=f"ω={omega_val}", color=omega_map[omega_val])
+            ylabel_map = {
+                "lambda": "AEE",
+                "loss": "LF",
+                "eq_loss": "MSR",
+                "u_loss": "MSEE"
+            }
+            self.ax.set_xlabel("Epoch")
+            self.ax.set_ylabel(ylabel_map[metric_key])
+            self.ax.set_yscale(yscale)
+            self.ax.xaxis.set_major_locator(MaxNLocator(nbins=6))
+            self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
+
         self.apply_manual_axes()
         self.canvas.draw()
 
@@ -574,7 +694,7 @@ class App:
         if not file_path:
             return
         # todo Change the DPI and the size here, 3.5 2.5 is preferred
-        temp_fig, temp_ax = plt.subplots(figsize=(5.0, 3.0), dpi=600)
+        temp_fig, temp_ax = plt.subplots(figsize=(4.0, 2.5), dpi=600)
         # Copy all components to the new figure
         for line in self.ax.get_lines():
             temp_ax.plot(line.get_xdata(), line.get_ydata(), color=line.get_color(),
