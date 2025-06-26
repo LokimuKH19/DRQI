@@ -12,7 +12,7 @@ This repository provides a reproducible implementation of the DRQI-based eigenva
 ## How to Use?
 - Main Process is in para_search.py/seed_search.py. Select the type of problem in this file (as well as the parameters you want to change)
 - Change the basic config in CONFIG_DIRICHLET.json and CONFIG_PERIOD.json
-- Run para_search/seed_search.py to generate trained models and relative logs
+- Run seed_search.py to generate trained models and relative logs (While para_search.py is still an experimental function)
 - Detialed program is located in DRQI_Laplace2d.py/DRQI_FokkerPlank2d.py. You can change the operators in Dirichlet and periodic boundary  respectivelly. Follow the annotations.
 - Log files can be analyzed through view.py AFTER THE MODEL IS CREATED. ATTENTION: Always set the theoritical lambda manually when start the UI
 
