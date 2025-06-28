@@ -1,6 +1,6 @@
 # DRQI-Based Eigenvalue Solver
 
-This repository provides a fully reproducible implementation of the DRQI-based eigenvalue solver used in our recent submission.
+This repository provides a fully reproducible implementation of the DRQI-based eigenvalue solver used in our recent submission. This method is used to solve the eigenvalue problem in practical engineering with a relatively large learning rate and realize a rapid convergence.
 
 ## 🔍 Features
 - Deterministic runs via fixed random seeds and recorded training parameters.
