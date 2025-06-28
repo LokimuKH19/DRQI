@@ -52,6 +52,8 @@ This repository provides a fully reproducible implementation of the DRQI-based e
 - Some log files contain incorrect "Lambda Error" values.  
   However, this is handled correctly in the UI through manual input of the theoretical solution.
 
+- DO NOT use seeds longer than 8 digits or the search for timestamp will be bugged in `view.py`
+
 - MSEE behavior was improved after June 23.  
   Still, **Type-B convergence** (discussed in the paper) occasionally appears in periodic cases — likely due to eigenfunction phase shifts.  
   We suggest using **Pearson correlation** as an alternative metric to monitor convergence.
