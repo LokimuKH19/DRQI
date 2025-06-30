@@ -96,7 +96,7 @@ In fact, we have to use discreted sampling points to approximate the norm.
 
 ### 2025-06-22
 - Additional Laplace test results completed.
-- QMC integration improves 2D DRM accuracy.
+- QMC integration improves DRM's high-dimensional accuracy only in the Laplace case.
 - The Definition of MSEE still needs further refinement.
 
 ### 2025-06-26 — Major Update
