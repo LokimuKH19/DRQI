@@ -18,7 +18,7 @@ $$
 or equivalently, by absorbing the constant into the eigenvalue:
 
 $$
-L u = \lambda' u.
+L' u = \lambda' u.
 $$
 
 As a result, the current DRQI framework—originally developed for standard eigenvalue problems—remains directly applicable to a wide range of physically meaningful scenarios where $Q$ is constant. The flexibility of the loss function formulation also allows for future extension to non-trivial $Q$ operators:
