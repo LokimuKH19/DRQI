@@ -72,7 +72,7 @@ In fact, we have to use discreted sampling points to approximate the norm.
 - The main entry points are `para_search.py` and `seed_search.py`.  
   Choose the target problem type and modify relevant parameters directly in these files.
 
-- Basic configuration can be changed in `CONFIG_DIRICHLET.json` or `CONFIG_PERIOD.json`.
+- Basic configuration can be changed in `CONFIG_DIRICHLET.json`, `CONFIG_PERIOD.json`, `CONFIG_REACTOR.json`.
 
 - Run `seed_search.py` to train models and generate logs.  
   *(Note: `para_search.py` is currently experimental.)*
