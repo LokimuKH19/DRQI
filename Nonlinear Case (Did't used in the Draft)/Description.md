@@ -5,7 +5,7 @@ Although the main body of our paper focuses on linear differential operators, we
 A classical example in this context is the **Gross–Pitaevskii equation**, which models quantum fluids and Bose–Einstein condensates (BECs) in low-temperature physics:
 
 $$
-- u'' + u^3 + \left( -\frac{1}{c^2} \exp(2\cos x) + \sin^2 x - \cos x - 3 \right) u = \lambda u
+  -u'' + u^3 + \left( -\frac{1}{c^2} \exp(2\cos x) + \sin^2 x - \cos x - 3 \right) u = \lambda u
 $$
 
 Here, $x \in [0, 2\pi]$ and periodic boundary conditions are assumed. The constant $c$ ensures normalization:
