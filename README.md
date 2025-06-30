@@ -105,6 +105,7 @@ In fact, we have to use discreted sampling points to approximate the norm.
 
 ### 2025-06-30
 - The DRQI was validated by neuron transportation equation, showing its potential for nuclear engineering usage.
+- A visualization software for fast analysis of reactor core is planned.
 
 ---
 
