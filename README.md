@@ -4,10 +4,10 @@ This repository provides a fully reproducible implementation of the DRQI-based e
 
 # Problem Setup: Eigenvalue Formulation
 
-This project addresses a general eigenvalue problem for a second-order differential operator **L**, defined over a connected domain  
+This project addresses a general eigenvalue problem for a second-order differential operator $L$, defined over a connected domain  
 $\Omega\subset\mathbb{R}^d$ with a Lipschitz continuous boundary $\partial\Omega$.
 
-The goal is to find eigenpairs $ (u, \lambda) $ such that:
+The goal is to find eigenpairs $u, \lambda$ such that:
 
 $$
 \begin{cases}
@@ -18,29 +18,29 @@ B u = 0, & \text{for } x \in \partial\Omega
 $$
 
 Where:
-- \( L \) is a linear differential operator (typically involves second-order partial derivatives),
-- \( \lambda \in \mathbb{R} \) is the eigenvalue,
-- \( u(x) \) is the corresponding eigenfunction,
-- \( B \) encodes boundary conditions (e.g., Dirichlet or Neumann).
+- $L$ is a linear differential operator (typically involves second-order partial derivatives),
+- $\lambda\in\mathbb{R}$ is the eigenvalue,
+- $u(x)$ is the corresponding eigenfunction,
+- $B$ encodes boundary conditions (e.g., Dirichlet or Neumann).
 
 ---
 
 ## Function Spaces
 
-To ensure a valid solution, the eigenfunction \( u(x) \) is assumed to lie in the Sobolev space:
+To ensure a valid solution, the eigenfunction $u(x)$ is assumed to lie in the Sobolev space:
 
 $$
 u(x) \in H^2(\Omega) \cap V
 $$
 
-Here, \( V \) depends on the type of boundary condition \( B \).  
-For example, with homogeneous Dirichlet boundary conditions (i.e., \( u = 0 \) on \( \partial \Omega \)), we set:
+Here, $V$ depends on the type of boundary condition $B$.  
+For example, with homogeneous Dirichlet boundary conditions (i.e., $u = 0$ on $\partial\Omega$), we set:
 
 $$
 V = H_0^1(\Omega)
 $$
 
-In this context, the operator \( L \) acts as a mapping:
+In this context, the operator $L$ acts as a mapping:
 
 $$
 L : H^2(\Omega) \cap V \rightarrow L^2(\Omega)
@@ -50,13 +50,13 @@ $$
 
 ## Residuals and Error Measures
 
-Throughout this project, all residuals and error metrics are computed using the standard **\( L^2 \)** norm unless otherwise specified. That is:
+Throughout this project, all residuals and error metrics are computed using the standard $L^2$ norm unless otherwise specified. That is:
 
 $$
 \| f \|_{L^2(\Omega)} = \left( \int_\Omega |f(x)|^2 \, dx \right)^{1/2}
 $$
 
-This norm provides a measure of the mean-squared difference over the domain \( \Omega \) and is commonly used in PDE-related numerical and learning-based methods.
+This norm provides a measure of the mean-squared difference over the domain $\Omega$ and is commonly used in PDE-related numerical and learning-based methods. (I mean, PINN...)
 
 
 ## 🔍 Features
