@@ -2,44 +2,62 @@
 
 This repository provides a fully reproducible implementation of the DRQI-based eigenvalue solver used in our recent submission. This method is used to solve eigenvalue problem in practical engineering with a relatively large learning rate and realize a rapid convergence. In particular, the algorithm is used to find the non-trivial minimum modulus eigenvalue and its corresponding eigenfunction of the following problem with a relatively large learning rate and reach convergence with a certain stability.
 
-Problem Setup: Eigenvalue Formulation
+# Problem Setup: Eigenvalue Formulation
 
-This project focuses on solving a class of eigenvalue problems involving a second-order linear differential operator L, defined over a domain Ω ⊂ ℝᵈ with a Lipschitz boundary ∂Ω.
+This project addresses a general eigenvalue problem for a second-order differential operator **L**, defined over a connected domain  
+\( \Omega \subset \mathbb{R}^d \) with a Lipschitz continuous boundary \( \partial \Omega \).
 
-The problem is formulated as:
+The goal is to find eigenpairs \( (u, \lambda) \) such that:
 
-L u(x) = λ u(x),       for x ∈ Ω  
-B u(x) = 0,            for x ∈ ∂Ω
+$$
+\begin{cases}
+L u = \lambda u, & \text{for } x \in \Omega \\\\
+B u = 0, & \text{for } x \in \partial\Omega
+\end{cases}
+\tag{1}
+$$
 
-    u(x) is the eigenfunction.
+Where:
+- \( L \) is a linear differential operator (typically involves second-order partial derivatives),
+- \( \lambda \in \mathbb{R} \) is the eigenvalue,
+- \( u(x) \) is the corresponding eigenfunction,
+- \( B \) encodes boundary conditions (e.g., Dirichlet or Neumann).
 
-    λ ∈ ℝ is the corresponding eigenvalue.
+---
 
-    B represents the boundary condition (Dirichlet, Neumann, etc.).
+## Function Spaces
 
-Function Space and Assumptions
+To ensure a valid solution, the eigenfunction \( u(x) \) is assumed to lie in the Sobolev space:
 
-To ensure mathematical correctness, we assume:
+$$
+u(x) \in H^2(\Omega) \cap V
+$$
 
-    u(x) belongs to the Sobolev space H²(Ω) and also satisfies the boundary conditions encoded by V.
+Here, \( V \) depends on the type of boundary condition \( B \).  
+For example, with homogeneous Dirichlet boundary conditions (i.e., \( u = 0 \) on \( \partial \Omega \)), we set:
 
-    For example:
+$$
+V = H_0^1(\Omega)
+$$
 
-        In the case of homogeneous Dirichlet boundaries, we take V = H₀¹(Ω)
+In this context, the operator \( L \) acts as a mapping:
 
-Thus, the operator L acts as:
+$$
+L : H^2(\Omega) \cap V \rightarrow L^2(\Omega)
+$$
 
-L : H²(Ω) ∩ V  →  L²(Ω)
+---
 
-Error Metric
+## Residuals and Error Measures
 
-All residuals and losses are computed in the standard L² norm unless otherwise stated.
+Throughout this project, all residuals and error metrics are computed using the standard **\( L^2 \)** norm unless otherwise specified. That is:
 
-This norm is defined as:
+$$
+\| f \|_{L^2(\Omega)} = \left( \int_\Omega |f(x)|^2 \, dx \right)^{1/2}
+$$
 
-‖f‖ₗ₂ = sqrt( ∫_Ω |f(x)|² dx )
+This norm provides a measure of the mean-squared difference over the domain \( \Omega \) and is commonly used in PDE-related numerical and learning-based methods.
 
-It represents the root mean squared error over the domain and is widely used in PDE solvers and neural approximation methods.
 
 ## 🔍 Features
 - Deterministic runs via fixed random seeds and recorded training parameters.
