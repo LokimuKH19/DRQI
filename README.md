@@ -53,7 +53,7 @@ $$
 Throughout this project, all residuals and error metrics are computed using the standard $L^2$ norm unless otherwise specified. That is:
 
 $$
-\Vert f\Vert_{L^2(\Omega)} = \left( \int_\Omega |f(x)|^2 \, dx \right)^{1/2}
+\Vert f\Vert_{L^2(\Omega)} = \left( \int_\Omega |f(x)|^2 dx \right)^{1/2}
 $$
 
 This norm provides a measure of the mean-squared difference over the domain $\Omega$ and is commonly used in PDE-related numerical and learning-based methods. (I mean, PINN...)
