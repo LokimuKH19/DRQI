@@ -12,7 +12,7 @@ In practical applications, especially with larger networks used to improve appro
 So, in most situations, it's fair to assume that **each training step takes about the same time** across different methods.
 
 That said, in a few of our experiments (notably in the QMC results), we did observe some unusually high average training times per epoch.  
-This was traced back to hardware conditions — specifically, the machine was running in **battery-saving mode without being plugged in**, which significantly slowed down CPU and GPU performance.
+This was traced back to hardware conditions — specifically, the machine was running in **battery-saving mode without being plugged in**, which significantly slowed down CPU and GPU performance.😂
 
 ---
 
