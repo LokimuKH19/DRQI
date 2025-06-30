@@ -29,4 +29,4 @@ $$
 
 According to the result obtained in Section 3.1.1.2, the loss function would likely to convergence on the mean squared residual (MSR) of the PDE itself during training, forcing the trail function and the corresonding Rayleigh Quotient to fit the equation. This opens the door to applying DRQI to more general operator pairs while maintaining a consistent training strategy.
 
-Although this new DRQI has not yet been tested, future reactor analysis software development is expected to incorporate the loss function of this new form.
+Although this new DRQI has not yet been tested, future `2d fuel components analysis software` development is expected to incorporate the loss function of this new form.
