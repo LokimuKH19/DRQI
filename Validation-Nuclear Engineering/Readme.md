@@ -21,7 +21,7 @@ $$
 L' u = \lambda' u.
 $$
 
-As a result, the current DRQI framework—originally developed for standard eigenvalue problems—remains directly applicable to a wide range of physically meaningful scenarios where $Q$ is constant. The flexibility of the loss function formulation also allows for future extension to non-trivial $Q$ operators, where $u^{k-1}$ means the trail function at the ${k-1}$ th step. (Why can't GitHub render bottom brackets properly... (・∀・(・∀・(・∀・*) ):
+As a result, the current DRQI framework `DRQI_Laplace2d.py` for standard eigenvalue problems remains directly applicable to a wide range of physically meaningful scenarios where $Q$ is constant, outputting $\lambda'$. But what should do to directly obtain $\lambda$ in  occasions? The flexibility of the loss function formulation also allows for future extension to non-trivial $Q$ operators, where $u^{k-1}$ means the trail function at the ${k-1}$ th step. (Why can't GitHub render bottom brackets properly... (・∀・(・∀・(・∀・*) ):
 
 $$
 l(\theta) = \mathbb{E}_x \bigg( L u_k(x; \theta) - (\lambda + 1)\[ \omega Q u_k(x;\theta) + (1-\omega) Q u^{k-1}(x) \] \bigg)
@@ -37,4 +37,4 @@ According to the result obtained in Section 3.1.1.2, the loss function would lik
 
 Only 1d results is reported in the paper, still you can use it to do with higher dimensional problems, see the **2d** and **3d** log files in this folder. However, the engineering meaning of these cases is not strong enough to display in this paper. 
 
-Although this new DRQI is tested when Q is a constant, future `2d fuel components analysis software` development is expected to incorporate the loss function of this new form.
+Although this new DRQI is only tested when Q is a constant by now, future `2d fuel components analysis software` development is expected to incorporate the loss function of this new form.
