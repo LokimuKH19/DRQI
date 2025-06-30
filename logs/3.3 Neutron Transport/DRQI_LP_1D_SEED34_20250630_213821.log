@@ -1,0 +1,54 @@
+========== Problem ==========
+D=0.1
+
+¦²a=0.3
+
+¦Í¦²f=2
+
+========== Configuration ==========
+Seed: 34
+Device: cuda
+CUDA Available: True
+CUDA Device Name: NVIDIA GeForce RTX 2060
+-----------------------------------
+Model Dimension (d): 1
+Model Architecture:
+Sequential(
+  (0): Linear(in_features=1, out_features=10, bias=True)
+  (1): Tanh()
+  (2): Linear(in_features=10, out_features=10, bias=True)
+  (3): Tanh()
+  (4): Linear(in_features=10, out_features=1, bias=True)
+  (5): Tanh()
+  (6): Linear(in_features=1, out_features=1, bias=True)
+  (7): Tanh()
+)
+Number of Samples: 1000
+Input Sampling Method: LHS
+-----------------------------------
+Optimizer: Adam
+Learning Rate: 0.01
+Loss Function: MSELoss
+-----------------------------------
+Algorithm: DRQI
+Unique Parameters: {'omega': 0.5, 'gamma': 0}
+-----------------------------------
+Max Epochs: 3000
+Real Epochs: 281
+Early Stopping Threshold (eq_loss < epsilon1): 1e-05
+Early Stopping Threshold (eq_loss_k - ep_loss_k-1 < epsilon2): 1e-08
+Theoretical Eigenvalue: 0.6434802200544679
+=================Results==================
+
+Loss: 1.5786814870663094e-06
+Lambda_Error: 1.5611253547653803e-06
+Eigen Value: 0.6434817811798227
+U Loss:0.4538766733349394
+Equation Loss:1.5258897625346512e-06
+Average time per step: 0.008101 seconds
+
+k_th=1.5540493224723428
+
+Criticality Factor k: 1.5540455522555772, Error: 3.7702167656750163e-06
+
+Relative k Error: 0.0%
