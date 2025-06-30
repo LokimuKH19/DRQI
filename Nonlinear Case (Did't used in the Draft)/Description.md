@@ -1,4 +1,4 @@
-## Nonlinear Eigenvalue Problem (Experimental Support)
+## Potential Extension to Nonlinear Problems
 
 Although the main body of our paper focuses on linear differential operators, we believe that our method is capable of solving **nonlinear operator eigenvalue problems** as well. Due to the lack of a rigorous theoretical framework at this stage, we have not included these results in the formal submission. However, preliminary numerical experiments indicate promising behavior.
 
