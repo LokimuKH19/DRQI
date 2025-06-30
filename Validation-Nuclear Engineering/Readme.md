@@ -24,7 +24,9 @@ $$
 As a result, the current DRQI framework—originally developed for standard eigenvalue problems—remains directly applicable to a wide range of physically meaningful scenarios where $Q$ is constant. The flexibility of the loss function formulation also allows for future extension to non-trivial $Q$ operators:
 
 $$
-L(\theta) = \mathbb{E}_x \left[ L u_k(x; \theta) - (\lambda + 1) \left( \omega Q u_k(x; \theta) + (1 - \omega) Q u_{k-1}(x) \right) \right]^2.
+L(\theta) = \mathbb{E}_x \left[L u_k(x; \theta) - (\lambda + 1) \left( \omega Q u_k(x; \theta) + (1 - \omega) Q u_{k-1}(x) \right) \right]^2
 $$
 
-This opens the door to applying DRQI to more general operator pairs while maintaining a consistent training strategy.
+According to the result obtained in Section 3.1.1.2, the loss function would likely to convergence on the mean squared residual (MSR) of the PDE itself during training, forcing the trail function and the corresonding Rayleigh Quotient to fit the equation. This opens the door to applying DRQI to more general operator pairs while maintaining a consistent training strategy.
+
+Although this new DRQI has not yet been tested, future reactor analysis software development is expected to incorporate loss functions of this form.
