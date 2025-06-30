@@ -79,7 +79,8 @@ In fact, we have to use discreted sampling points to approximate the norm.
 
 - The core implementation is located in:
   - `DRQI_Laplace2d.py` for Dirichlet problems  
-  - `DRQI_FokkerPlank2d.py` for periodic/Fokker-Planck problems  
+  - `DRQI_FokkerPlank2d.py` for periodic/Fokker-Planck problems
+  - `DRQI_Reactor.py` can be only runned solely for the neutron transport problems.
   Modify the differential operators as needed — detailed annotations are provided.
 
 - Use `view.py` to analyze logs **after training is complete**.  
