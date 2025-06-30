@@ -27,7 +27,7 @@ $$
 l(\theta) = \mathbb{E}_x \bigg( L u_k(x; \theta) - (\lambda + 1)\[ \omega Q u_k(x;\theta) + (1-\omega) Q u^{k-1}(x) \] \bigg)
 $$
 
-In addition, the update of the Rayleigh Quotiet should use the generalized form:
+In addition, the update of the Rayleigh Quotient should use the generalized form:
 
 $$
 \lambda = \frac{\langle Lu, u \rangle}{\langle Qu, u \rangle}
