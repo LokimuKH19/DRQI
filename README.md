@@ -1,6 +1,45 @@
 # DRQI-Based Eigenvalue Solver
 
-This repository provides a fully reproducible implementation of the DRQI-based eigenvalue solver used in our recent submission. This method is used to solve the eigenvalue problem in practical engineering with a relatively large learning rate and realize a rapid convergence.
+This repository provides a fully reproducible implementation of the DRQI-based eigenvalue solver used in our recent submission. This method is used to solve eigenvalue problem in practical engineering with a relatively large learning rate and realize a rapid convergence. In particular, the algorithm is used to find the non-trivial minimum modulus eigenvalue and its corresponding eigenfunction of the following problem with a relatively large learning rate and reach convergence with a certain stability.
+
+Problem Setup: Eigenvalue Formulation
+
+This project focuses on solving a class of eigenvalue problems involving a second-order linear differential operator L, defined over a domain Ω ⊂ ℝᵈ with a Lipschitz boundary ∂Ω.
+
+The problem is formulated as:
+
+L u(x) = λ u(x),       for x ∈ Ω  
+B u(x) = 0,            for x ∈ ∂Ω
+
+    u(x) is the eigenfunction.
+
+    λ ∈ ℝ is the corresponding eigenvalue.
+
+    B represents the boundary condition (Dirichlet, Neumann, etc.).
+
+Function Space and Assumptions
+
+To ensure mathematical correctness, we assume:
+
+    u(x) belongs to the Sobolev space H²(Ω) and also satisfies the boundary conditions encoded by V.
+
+    For example:
+
+        In the case of homogeneous Dirichlet boundaries, we take V = H₀¹(Ω)
+
+Thus, the operator L acts as:
+
+L : H²(Ω) ∩ V  →  L²(Ω)
+
+Error Metric
+
+All residuals and losses are computed in the standard L² norm unless otherwise stated.
+
+This norm is defined as:
+
+‖f‖ₗ₂ = sqrt( ∫_Ω |f(x)|² dx )
+
+It represents the root mean squared error over the domain and is widely used in PDE solvers and neural approximation methods.
 
 ## 🔍 Features
 - Deterministic runs via fixed random seeds and recorded training parameters.
@@ -39,7 +78,7 @@ This repository provides a fully reproducible implementation of the DRQI-based e
 ### 2025-06-22
 - Additional Laplace test results completed.
 - QMC integration improves 2D DRM accuracy.
-- MSEE still needs further refinement.
+- The Definition of MSEE still needs further refinement.
 
 ### 2025-06-26 — Major Update
 - Support for Fokker-Planck problems added.
@@ -64,5 +103,3 @@ This repository provides a fully reproducible implementation of the DRQI-based e
 - Rarely, models without pretraining may converge to higher-order eigenpairs.
 
 - The figure-saving function has some issues with filename formatting.
-
-- Some comments in code files are written in Chinese.
