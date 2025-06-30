@@ -21,7 +21,7 @@ $$
 L' u = \lambda' u.
 $$
 
-As a result, the current DRQI framework—originally developed for standard eigenvalue problems—remains directly applicable to a wide range of physically meaningful scenarios where $Q$ is constant. The flexibility of the loss function formulation also allows for future extension to non-trivial $Q$ operators, where $u^{k-1}$ means the trail function at the $k-1$th step (Why Github cannot convert the Bottom bracket??? (・∀・(・∀・(・∀・*)):
+As a result, the current DRQI framework—originally developed for standard eigenvalue problems—remains directly applicable to a wide range of physically meaningful scenarios where $Q$ is constant. The flexibility of the loss function formulation also allows for future extension to non-trivial $Q$ operators, where $u^{k-1}$ means the trail function at the ${k-1}$ th step. (Why Github cannot convert the Bottom bracket??? (・∀・(・∀・(・∀・*)):
 
 $$
 L(\theta) = \mathbb{E}_x \bigg( L u_k(x; \theta) - (\lambda + 1)\[ \omega Q u_k(x;\theta) + (1-\omega) Q u^{k-1}(x) \] \bigg)
