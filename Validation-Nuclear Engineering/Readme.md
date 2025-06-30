@@ -9,7 +9,7 @@ $$
 
 where $Q$ is a positive definite operator, often representing material properties or integral source terms.
 
-In many engineering settings, especially in reactor simulations, the operator $Q$ is constant or spatially homogeneous. This allows a natural transformation of the problem into a standard form:
+In many engineering settings, especially in reactor simulations, the operator $Q$ is constant or spatially homogeneous (e.g. those we discussed in Section 3.3). This allows a natural transformation of the problem into a standard form:
 
 $$
 Q^{-1} L u = \lambda u,
