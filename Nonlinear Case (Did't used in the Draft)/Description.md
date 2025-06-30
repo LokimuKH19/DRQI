@@ -8,7 +8,7 @@ $$
 - u'' + u^3 + \left( -\frac{1}{c^2} \exp(2\cos x) + \sin^2 x - \cos x - 3 \right) u = \lambda u
 $$
 
-Here, \( x \in [0, 2\pi] \) and periodic boundary conditions are assumed. The constant \( c \) ensures normalization:
+Here, $x \in [0, 2\pi]$ and periodic boundary conditions are assumed. The constant $c$ ensures normalization:
 
 $$
 c = \left[ \int_0^{2\pi} \exp(2 \cos x) \, dx \right]^{1/2} \approx 3.7846
