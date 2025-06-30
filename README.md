@@ -5,9 +5,9 @@ This repository provides a fully reproducible implementation of the DRQI-based e
 # Problem Setup: Eigenvalue Formulation
 
 This project addresses a general eigenvalue problem for a second-order differential operator **L**, defined over a connected domain  
-\( \Omega \subset \mathbb{R}^d \) with a Lipschitz continuous boundary \( \partial \Omega \).
+$ \Omega \subset \mathbb{R}^d $ with a Lipschitz continuous boundary $ \partial \Omega $.
 
-The goal is to find eigenpairs \( (u, \lambda) \) such that:
+The goal is to find eigenpairs $ (u, \lambda) $ such that:
 
 $$
 \begin{cases}
