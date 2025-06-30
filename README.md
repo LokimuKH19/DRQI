@@ -103,6 +103,9 @@ In fact, we have to use discreted sampling points to approximate the norm.
 - Support for Fokker-Planck problems added.
 - New visualization tools: **Density plots** and **Omega plots**.
 
+### 2025-06-30
+- The DRQI was validated by neuron transportation equation, showing its potential for nuclear engineering usage.
+
 ---
 
 ## ⚠️ Known Issues & Notes
