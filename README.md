@@ -126,4 +126,5 @@ In fact, we have to use discreted sampling points to approximate the norm.
 
 - Rarely, models without pretraining may converge to higher-order eigenpairs. This phenomenon is actually quite interesting and could be a direction for future work. The general idea would be to **intentionally guide the model to first converge toward an approximate eigenfunction**, possibly by using a simplified or auxiliary loss function. Once the model has "locked onto" that mode, we can then **switch back to the original loss function** and continue normal training.  In principle, this kind of staged training might allow us to selectively target higher-order eigenpairs. However, in practice, **we haven't yet found a stable or repeatable way** to make this work consistently. The results seem to depend on a mix of initialization, seed values, and architecture details — all of which need more systematic exploration.
 
-- The figure-saving function has some issues with filename formatting.
+- The figure-saving function has some issues with filename formatting. And the resizing has to be done manually by editing the code in `views.py`.
+,
