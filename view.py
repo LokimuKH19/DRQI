@@ -118,7 +118,7 @@ class App:
         ttk.Combobox(control_frame, textvariable=self.y_scale, values=["linear", "log"], state="readonly", width=6).pack(side=tk.LEFT)
 
         tk.Button(control_frame, text="Plot", command=self.plot_selected).pack(side=tk.LEFT, padx=10)
-        tk.Button(control_frame, text="Save Figure", command=self.save_figure).pack(side=tk.LEFT, padx=10)
+
 
         self.file_list = tk.Listbox(top_frame, height=3, width=60)
         self.file_list.pack(side=tk.LEFT, padx=5)
@@ -129,10 +129,20 @@ class App:
         self.lambda_input.insert(0, "1*pi**2")
         tk.Button(top_frame, text="Update Theoretical λ", command=self.update_lambda_theory).pack(side=tk.LEFT)
 
-        # 单选框用于 comparative log 模式
-        self.comparative_plot_type = tk.StringVar(value="lambda")  # 默认选 lambda error
+        tk.Button(top_frame, text="Save Figure", command=self.save_figure).pack(side=tk.LEFT, padx=10)
+        tk.Label(top_frame, text="Save Width").pack(side=tk.LEFT)
+        self.save_width_entry = tk.Entry(top_frame, width=8)
+        self.save_width_entry.pack(side=tk.LEFT)
+        self.save_width_entry.insert(0, "3.5")
+        tk.Label(top_frame, text="Save Height").pack(side=tk.LEFT)
+        self.save_height_entry = tk.Entry(top_frame, width=8)
+        self.save_height_entry.pack(side=tk.LEFT)
+        self.save_height_entry.insert(0, "2.5")
+
+        # comparative log buttons
+        self.comparative_plot_type = tk.StringVar(value="lambda")  # Default: lambda error
         self.comparative_plot_frame = tk.Frame(control_frame)
-        self.comparative_plot_frame.pack_forget()  # 初始不显示
+        self.comparative_plot_frame.pack_forget()  # Default: None
 
         top_radio_frame = tk.Frame(self.comparative_plot_frame)
         top_radio_frame.pack(side=tk.TOP, anchor='w', pady=2)
@@ -170,13 +180,15 @@ class App:
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
-        # 坐标轴控制相关
+
+
+        # Axis-Control
         self.manual_axis = tk.BooleanVar(value=False)
         tk.Checkbutton(control_frame, text="Manual-Axes Limit", variable=self.manual_axis).pack(side=tk.LEFT, padx=(20, 5))
 
         self.xmin_entry = tk.Entry(control_frame, width=8)
         self.xmin_entry.pack(side=tk.LEFT)
-        self.xmin_entry.insert(0, "")  # 初始留空
+        self.xmin_entry.insert(0, "")
         tk.Label(control_frame, text="≤ x ≤").pack(side=tk.LEFT)
 
         self.xmax_entry = tk.Entry(control_frame, width=8)
@@ -694,7 +706,8 @@ class App:
         if not file_path:
             return
         # todo Change the DPI and the size here, 3.5 2.5 is preferred
-        temp_fig, temp_ax = plt.subplots(figsize=(4.0, 2.5), dpi=600)
+        width, height = float(self.save_width_entry.get()), float(self.save_height_entry.get())
+        temp_fig, temp_ax = plt.subplots(figsize=(width, height), dpi=600)
         # Copy all components to the new figure
         for line in self.ax.get_lines():
             temp_ax.plot(line.get_xdata(), line.get_ydata(), color=line.get_color(),
