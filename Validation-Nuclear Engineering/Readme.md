@@ -35,18 +35,6 @@ $$
 
 According to the result obtained in Section 3.1.1.2, the loss function would likely to convergence on the mean squared residual (MSR) of the PDE itself during training, forcing the trail function and the corresonding Rayleigh Quotient to fit the equation. This opens the door to applying DRQI to more general operator pairs while maintaining a consistent training strategy.
 
-Only 1d results is reported in the paper, still you can use it to do with higher dimensional problems, see the **2d** and **3d** log files in this folder. However, the engineering meaning of these cases is not strong enough to display in this paper:
-
-- 2d Density Results
-
-![2d Density](./2d case's density.png)
-
-![2d_Convergence](./2d case's convergence.png)
-
-- 3d Results
-
-![3d Density](./3d case's density.png)
-
-![3d_Convergence](./3d case's convergence.png)
+Only 1d results is reported in the paper, still you can use it to do with higher dimensional problems, see the **2d** and **3d** log files in this folder. However, the engineering meaning of these cases is not strong enough to display in this paper.
 
 Although this new DRQI is only tested when Q is a constant by now, future `2d fuel components analysis software` development is expected to incorporate the loss function of this new form.
