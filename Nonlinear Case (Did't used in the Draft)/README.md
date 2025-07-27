@@ -1,4 +1,4 @@
-## Potential Extension to Nonlinear Problems
+## 🧠 Potential Extension to Nonlinear Problems
 
 Although the main body of our paper focuses on linear differential operators, we believe that our method is capable of solving **nonlinear operator eigenvalue problems** as well. Due to the lack of a rigorous theoretical framework at this stage, we have not included these results in the formal submission. However, preliminary numerical experiments indicate promising behavior.
 
@@ -36,5 +36,7 @@ By contrast, when we apply our DRQI-based method (see `DRQI_FokkerPlank2D.py`) w
 We didn’t formally include nonlinear problems in the paper, mainly because we’re still figuring out the theory. But honestly, the method **does seem to work** even when the operator includes nonlinear terms like $u^3$ We took a Gross–Pitaevskii-type equation and tried both spectral and PINN-based methods. Spectral methods get unstable quickly as the resolution increases (due to frequency interactions), but our DRQI framework **stably locked onto an eigenvalue around 1.4**, and the MSR loss even converged nicely. 
 
 In fact, to say this problem has an "eigenvalue" or an "eigenfunction" is questionalble. However, the model consistently converges to a fixed rayleigh quotient, regardless of network structure or initialization. This behavior reflects the nature of the problem, where the eigenvalue arises from a constrained energy minimization principle rather than a linear spectral condition. Although we do not include this case in the main paper due to the lack of a clear baseline for quantitative comparison, the result demonstrates the capability of our method to capture nonlinear ground states with high stability.
+
+Moreover, in this nonlinear example, we do not observe convergence between the loss function and the MSR. This suggests that the model may not have substantially converged. However, the calculation results under different hyperparameters fluctuate around 1.4. It also may be that we have not yet found a reasonable way to explain the results.
 
 So, while it's not fully ready for publication, it’s definitely something worth exploring if you’re interested in "nonlinear eigenvalue problems".
