@@ -3,7 +3,7 @@
 
 ## Notation & Setup (variables definition)
 
-* Let ( \Omega \subset \mathbb{R}^d ) be a bounded domain and (\mathcal H) denote a Hilbert space (e.g. (L^2(\Omega)) or (H^2(\Omega)) depending on context). Inner product (\langle \cdot,\cdot\rangle) and norm (| \cdot|) denote the Hilbert-space inner product and induced norm (or Euclidean norm (|\cdot|_2) for finite-dimensional vectors when we consider discrete/matrix case).
+* Let $\Omega \subset \mathbb{R}^d$ be a bounded domain and $\mathcal H$ denote a Hilbert space (e.g. $L^2(\Omega)$ or $H^2(\Omega)$ depending on context). Inner product $\langle \cdot,\cdot\rangle$ and norm $| \cdot|$ denote the Hilbert-space inner product and induced norm (or Euclidean norm $|\cdot|_2$ for finite-dimensional vectors when we consider discrete/matrix case).
 
 * Continuous operator: (\mathcal L: \mathcal D(\mathcal L)\subset\mathcal H \to \mathcal H). Assume (\mathcal L) is linear and (for main theorems) self-adjoint (Hermitian) and elliptic so that spectral theory applies; denote its eigenpairs by ((\lambda_j,u_j)) with (|u_j|=1) and eigenvalues ordered ( \lambda_1 < \lambda_2 \le \lambda_3 \le \dots ). We focus on the principal eigenpair ((\lambda^*,u^*):=(\lambda_1,u_1)) and assume it is simple.
 
