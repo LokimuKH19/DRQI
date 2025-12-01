@@ -112,7 +112,7 @@ In fact, we have to use discreted sampling points to approximate the norm.
 - Now `views.py` supports resizing by the UI instead of manually modify the code when saving figures.
 
 ### 2025-12-01
-- After careful peer review, we have finished a theoretical analysis of the DRQI, see in the `proof.md`
+- After careful peer review, we have finished a theoretical analysis of the DRQI, as seen in the revised paper, Appendix A.
 ---
 
 ## ⚠️ Known Issues & Notes
