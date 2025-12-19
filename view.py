@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
 import torch
 import pickle
 import os
@@ -12,19 +13,20 @@ import matplotlib
 from scipy.stats import gaussian_kde
 from DRQI_Laplace2d import PINN
 from DRQI_FokkerPlank2d import MPINN
-from matplotlib.ticker import MaxNLocator
+from matplotlib.ticker import MaxNLocator, LogLocator
 import math
 import matplotlib.font_manager as fm
 
 COLORS = ['#FFA853', '#92B8F9', '#F39EF9', '#7DDE6A']
+TYPE01 = ['--', '-.', '-']
 
 # Set global style for journal-quality plots
 plt.rcParams['font.family'] = 'Times New Roman'
-plt.rcParams['axes.labelsize'] = 14
-plt.rcParams['axes.titlesize'] = 15
-plt.rcParams['legend.fontsize'] = 13
-plt.rcParams['xtick.labelsize'] = 12
-plt.rcParams['ytick.labelsize'] = 12
+plt.rcParams['axes.labelsize'] = 24
+plt.rcParams['axes.titlesize'] = 20
+plt.rcParams['legend.fontsize'] = 24
+plt.rcParams['xtick.labelsize'] = 22
+plt.rcParams['ytick.labelsize'] = 22
 
 
 def parse_log_file(log_path, theoretical=None):
@@ -133,11 +135,11 @@ class App:
         tk.Label(top_frame, text="Save Width").pack(side=tk.LEFT)
         self.save_width_entry = tk.Entry(top_frame, width=8)
         self.save_width_entry.pack(side=tk.LEFT)
-        self.save_width_entry.insert(0, "3.5")
+        self.save_width_entry.insert(0, "7.5")
         tk.Label(top_frame, text="Save Height").pack(side=tk.LEFT)
         self.save_height_entry = tk.Entry(top_frame, width=8)
         self.save_height_entry.pack(side=tk.LEFT)
-        self.save_height_entry.insert(0, "2.5")
+        self.save_height_entry.insert(0, "5.0")
 
         # comparative log buttons
         self.comparative_plot_type = tk.StringVar(value="lambda")  # Default: lambda error
@@ -352,7 +354,9 @@ class App:
                 self.ax.set_xlabel("Epoch")
                 self.ax.set_ylabel("Value")
                 self.ax.set_yscale(yscale)
-                self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
+                self.ax.xaxis.set_major_locator(MaxNLocator(nbins=5))
+
+                #self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
 
             elif mode == "Function (1D only)":
                 if self.model.d != 1:
@@ -399,7 +403,9 @@ class App:
                     self.ax.set_xlabel("x")
                     self.ax.set_ylabel("u(x)")
                     self.ax.set_title("Function Plot")
-                    self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
+                    self.ax.xaxis.set_major_locator(MaxNLocator(nbins=5))
+
+                    # self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
 
             elif mode == "Density":
                 try:
@@ -448,7 +454,9 @@ class App:
                     self.ax.set_xlabel("u")
                     self.ax.set_ylabel("Density")
                     self.ax.set_title("u(x) Density")
-                    self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
+                    self.ax.xaxis.set_major_locator(MaxNLocator(nbins=5))
+
+                    # self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
 
         # 比较模式
         elif self.mode.get() == "comparative":
@@ -538,7 +546,9 @@ class App:
             self.ax.set_xlabel("Epoch")
             self.ax.set_ylabel(translate.get(metric, metric.upper()))
             self.ax.set_yscale(yscale)
-            self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
+            self.ax.xaxis.set_major_locator(MaxNLocator(nbins=5))
+
+            # self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
         elif plot_type in ["lambda", "loss", "eq_loss", "u_loss"]:
             translate = {"lambda": "AEE", "loss": "LF", "eq_loss": "MSR", "u_loss": "MSEE"}
             for i, algo in enumerate(["DRM", "IPMNN", "DRQI"]):
@@ -546,11 +556,13 @@ class App:
                     continue
                 y_data = algorithms[algo][plot_type]
                 x_axis = list(range(len(y_data)))
-                self.ax.plot(x_axis, y_data, label=algo, color=COLORS[i], linestyle='-')
+                self.ax.plot(x_axis, y_data, label=algo, color=COLORS[i], linestyle=TYPE01[i], linewidth="2.5")
             self.ax.set_xlabel("Epoch")
             self.ax.set_ylabel(translate.get(plot_type, plot_type.upper()))
             self.ax.set_yscale(yscale)
-            self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
+            self.ax.xaxis.set_major_locator(MaxNLocator(nbins=5))
+
+            # self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
 
         elif plot_type == "u":
             dim = None
@@ -577,7 +589,8 @@ class App:
             self.ax.set_xlabel("x")
             self.ax.set_ylabel("u(x)")
             self.ax.set_title("u(x) Comparison")
-            self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
+            self.ax.xaxis.set_major_locator(MaxNLocator(nbins=5))
+            # self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
 
         elif plot_type in ["omega_lambda", "omega_loss", "omega_eq_loss", "omega_u_loss"]:
             omega_map = {0.2: COLORS[0], 0.4: COLORS[1], 0.6: COLORS[2], 0.8: COLORS[3]}
@@ -620,8 +633,8 @@ class App:
             self.ax.set_xlabel("Epoch")
             self.ax.set_ylabel(ylabel_map[metric_key])
             self.ax.set_yscale(yscale)
-            self.ax.xaxis.set_major_locator(MaxNLocator(nbins=6))
-            self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
+            self.ax.xaxis.set_major_locator(MaxNLocator(nbins=5))
+            # self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
 
         self.apply_manual_axes()
         self.canvas.draw()
@@ -668,7 +681,7 @@ class App:
 
         self.ax.set_title(f"{ylabel_map.get(plot_type, 'Metric')} Point Cloud")
         self.ax.set_ylabel(ylabel_map.get(plot_type, 'Value'))
-        self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
+        # self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
         self.ax.set_yscale(yscale)
         self.apply_manual_axes()
         self.canvas.draw()
@@ -692,10 +705,8 @@ class App:
             y_initial = 'Y'
 
         lr_str = str(lr).replace('.', 'p').replace('e', 'e').replace('+', '').replace('-', 'm')
-
         default_filename = f"{d}-{optimizer}-LR{lr_str}-SEED{seed}-{y_initial}.png"
 
-        # todo BUG exists in the filename function
         file_path = filedialog.asksaveasfilename(
             initialdir=default_dir,
             initialfile=default_filename,
@@ -705,76 +716,117 @@ class App:
         )
         if not file_path:
             return
-        # todo Change the DPI and the size here, 3.5 2.5 is preferred
-        width, height = float(self.save_width_entry.get()), float(self.save_height_entry.get())
-        temp_fig, temp_ax = plt.subplots(figsize=(width, height), dpi=600)
-        # Copy all components to the new figure
-        for line in self.ax.get_lines():
-            temp_ax.plot(line.get_xdata(), line.get_ydata(), color=line.get_color(),
-                         linestyle=line.get_linestyle(), label=line.get_label())
 
+        width = float(self.save_width_entry.get())
+        height = float(self.save_height_entry.get())
+
+        # ---------- create clean figure ----------
+        fig, ax = plt.subplots(figsize=(width, height), dpi=600)
+
+        # ---------- copy lines ----------
+        for line in self.ax.get_lines():
+            ax.plot(
+                line.get_xdata(),
+                line.get_ydata(),
+                color=line.get_color(),
+                linestyle=line.get_linestyle(),
+                linewidth=line.get_linewidth(),
+                label=line.get_label()
+            )
+
+        # ---------- copy scatter ----------
         for col in self.ax.collections:
             offsets = col.get_offsets()
             if offsets is not None and len(offsets) > 0:
-                xy = offsets.data
-                facecolors = col.get_facecolors()
-                sizes = col.get_sizes()
-                color = facecolors[0] if len(facecolors) > 0 else 'blue'
-                size = sizes[0] if len(sizes) > 0 else 20
-                temp_ax.scatter(xy[:, 0], xy[:, 1], c=[color], s=size, label=col.get_label())
+                ax.scatter(
+                    offsets[:, 0],
+                    offsets[:, 1],
+                    s=col.get_sizes(),
+                    c=col.get_facecolors(),
+                    alpha=col.get_alpha(),
+                    label=col.get_label()
+                )
 
+        # ---------- copy bars / hist ----------
         for container in self.ax.containers:
             if isinstance(container, matplotlib.container.BarContainer):
-                label = container.get_label()
-                if label.startswith("_"):
-                    label = None
-                patches = []
                 for patch in container.patches:
-                    fc = patch.get_facecolor()
-                    facecolor = tuple(fc[0]) if isinstance(fc, np.ndarray) and fc.ndim == 2 else fc
-                    temp_patch = matplotlib.patches.Rectangle(
+                    rect = matplotlib.patches.Rectangle(
                         (patch.get_x(), patch.get_y()),
                         patch.get_width(),
                         patch.get_height(),
-                        facecolor=facecolor,
+                        facecolor=patch.get_facecolor(),
+                        edgecolor=patch.get_edgecolor(),
                         alpha=patch.get_alpha()
                     )
-                    temp_ax.add_patch(temp_patch)
-                    patches.append(temp_patch)
+                    ax.add_patch(rect)
 
-        temp_ax.set_xlim(self.ax.get_xlim())
-        temp_ax.set_ylim(self.ax.get_ylim())
+        # ---------- limits & scales ----------
+        ax.set_xlim(self.ax.get_xlim())
+        ax.set_ylim(self.ax.get_ylim())
+        ax.set_yscale(self.ax.get_yscale())
 
-        temp_ax.set_xlabel(self.ax.get_xlabel())
-        temp_ax.set_ylabel(self.ax.get_ylabel())
+        # ---------- labels (FULL FONT INHERIT) ----------
+        xlabel = self.ax.xaxis.label
+        ylabel = self.ax.yaxis.label
+        title = self.ax.title
 
-        temp_ax.set_xticks(self.ax.get_xticks())
-        temp_ax.set_yticks(self.ax.get_yticks())
-        temp_ax.set_xticklabels([tick.get_text() for tick in self.ax.get_xticklabels()], fontsize=plt.rcParams['xtick.labelsize'] )
-        temp_ax.set_yticklabels([tick.get_text() for tick in self.ax.get_yticklabels()], fontsize=plt.rcParams['ytick.labelsize'] )
+        ax.set_xlabel(
+            xlabel.get_text(),
+            fontsize=xlabel.get_fontsize(),
+            fontfamily=xlabel.get_family(),
+            fontweight=xlabel.get_weight()
+        )
+        ax.set_ylabel(
+            ylabel.get_text(),
+            fontsize=ylabel.get_fontsize(),
+            fontfamily=ylabel.get_family(),
+            fontweight=ylabel.get_weight()
+        )
+        ax.set_title(
+            title.get_text(),
+            fontsize=title.get_fontsize(),
+            fontfamily=title.get_family(),
+            fontweight=title.get_weight()
+        )
 
-        temp_ax.set_yscale(self.ax.get_yscale())
-
-        temp_ax.grid(True, linestyle='--', color='lightgray')
-        if self.plot_mode.get() == "Density":
-            temp_ax.legend(handles=[
-                matplotlib.patches.Patch(color=COLORS[0], alpha=0.7, label="Prediction"),
-                matplotlib.patches.Patch(color=COLORS[1], alpha=0.3, label="Theoretical")
-            ], loc='upper right', framealpha=0.5, fontsize=plt.rcParams['legend.fontsize'])
-            temp_ax.set_xlabel
+        # ---------- ticks ----------
+        ax.set_xticks(self.ax.get_xticks())
+        ax.set_yticks(self.ax.get_yticks())
+        # ---------- y-axis ticks (SAFE for save) ----------
+        if ax.get_yscale() == "log":
+            # log scale: force ~5 log ticks, never zero
+            ax.yaxis.set_major_locator(LogLocator(numticks=6))
         else:
-            temp_ax.legend(loc='upper right', framealpha=0.5, fontsize=plt.rcParams['legend.fontsize'])
+            # linear scale
+            ax.yaxis.set_major_locator(MaxNLocator(nbins=5, prune=None))
+        ax.tick_params(
+            axis='both',
+            which='major',
+            labelsize=self.ax.xaxis.get_ticklabels()[0].get_fontsize()
+        )
+        # ---------- grid ----------
+        ax.grid(True, linestyle='--', color='lightgray')
 
-        temp_fig.tight_layout(pad=1.0)
+        # ---------- legend ----------
+        legend = self.ax.get_legend()
+        if legend:
+            ax.legend(
+                handles=legend.legendHandles,
+                labels=[t.get_text() for t in legend.texts],
+                fontsize=legend.prop.get_size(),
+                framealpha=legend.get_frame().get_alpha()
+            )
 
-        # 保存
+        fig.tight_layout(pad=1.0)
+
         try:
-            temp_fig.savefig(file_path, dpi=600, bbox_inches='tight')
+            fig.savefig(file_path, dpi=600, bbox_inches='tight')
             messagebox.showinfo("Success", f"Figure saved:\n{file_path}")
         except Exception as e:
             messagebox.showerror("Save Failed", str(e))
         finally:
-            plt.close(temp_fig)
+            plt.close(fig)
 
 
 if __name__ == '__main__':
