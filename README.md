@@ -1,5 +1,7 @@
 # DRQI-Based Eigenvalue Solver
 
+> The repository is related to the paper "Deep Rayleigh quotient iteration (DRQI) for high-precision numerical solutions of eigenvalue problems for differential operators"
+
 This repository provides a fully reproducible implementation of the DRQI-based eigenvalue solver used in our recent submission. This method is used to solve eigenvalue problem in practical engineering with a relatively large learning rate and realize a rapid convergence. In particular, the algorithm is used to find the non-trivial minimum modulus eigenvalue and its corresponding eigenfunction of the following problem with a relatively large learning rate and reach convergence with a certain stability.
 
 # Problem Setup: Eigenvalue Formulation
