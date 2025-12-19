@@ -112,7 +112,11 @@ In fact, we have to use discreted sampling points to approximate the norm.
 - Now `views.py` supports resizing by the UI instead of manually modify the code when saving figures.
 
 ### 2025-12-01
-- After careful peer review, we have finished a theoretical analysis of the DRQI, as seen in the revised paper, Appendix A.
+- After careful peer review, we have finished a theoretical analysis of the DRQI, as seen in the revised paper, Appendix A, B, C.
+
+### 2025-12-19
+- Re-runned the Laplace cases in Section 3.1.1 of the papar under the new device.
+- New hardware/environment configurations: AMD Ryzen 7 7735H with Radeon Graphics 3.20 GHz CPU, NVIDIA RTX 4060 GPU and the PyTorch 2.3.0+cu121 framework
 ---
 
 ## ⚠️ Known Issues & Notes
