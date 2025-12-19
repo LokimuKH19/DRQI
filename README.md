@@ -115,8 +115,10 @@ In fact, we have to use discreted sampling points to approximate the norm.
 - After careful peer review, we have finished a theoretical analysis of the DRQI, as seen in the revised paper, Appendix A, B, C.
 
 ### 2025-12-19
-- Re-runned the Laplace cases in Section 3.1.1 of the papar under the new device.
+- `NEW-LP.zip`: Re-runned the Laplace cases in Section 3.1.1 of the papar under the new device.
 - New hardware/environment configurations: AMD Ryzen 7 7735H with Radeon Graphics 3.20 GHz CPU, NVIDIA RTX 4060 GPU and the PyTorch 2.3.0+cu121 framework
+- `Update.py` is added for one-tap reproduction
+- `views.py` modified readers-friendlier figure saving function
 ---
 
 ## ⚠️ Known Issues & Notes
