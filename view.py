@@ -18,6 +18,8 @@ import math
 import matplotlib.font_manager as fm
 
 COLORS = ['#FFA853', '#92B8F9', '#F39EF9', '#7DDE6A']
+COLORS01 = ['#FFA853', '#7DDE6A', '#FFA853', '#92B8F9']
+Style01 = ["-", "-", "--", "--"]
 TYPE01 = ['--', '-.', '-']
 
 # Set global style for journal-quality plots
@@ -59,12 +61,23 @@ def parse_log_file(log_path, theoretical=None):
     }
 
 
+def compute_density_curve(values, bins=200, sigma=2.0):
+    hist, bin_edges = np.histogram(values, bins=bins, density=True)
+    centers = 0.5 * (bin_edges[:-1] + bin_edges[1:])
+
+    # Gaussian smoothing
+    from scipy.ndimage import gaussian_filter1d
+    hist_smooth = gaussian_filter1d(hist, sigma=sigma)
+
+    return centers, hist_smooth
+
+
 class App:
     def __init__(self, root):
         self.plot_config = {
-            "lambda": {"label": "AEE", "color": COLORS[0]},
-            "loss": {"label": "LF", "color": COLORS[1]},
-            "eq_loss": {"label": "MSR", "color": COLORS[2]},
+            "lambda": {"label": "AEE", "color": COLORS[2]},
+            "loss": {"label": "LF", "color": COLORS[0]},
+            "eq_loss": {"label": "MSR", "color": COLORS[1]},
             "u_loss": {"label": "MSEE", "color": COLORS[3]},
         }
         self.root = root
@@ -343,13 +356,13 @@ class App:
                 self.ax.grid(True, linestyle='--', color='lightgray')
                 x_axis = list(range(len(self.plot_data["loss"])))
                 if self.plot_lambda.get() and self.plot_data["lambda"] is not None:
-                    self.ax.plot(x_axis, self.plot_data["lambda"], color=self.plot_config["lambda"]["color"], label=self.plot_config["lambda"]["label"])
+                    self.ax.plot(x_axis, self.plot_data["lambda"], color=self.plot_config["lambda"]["color"], label=self.plot_config["lambda"]["label"], linewidth="2.5")
                 if self.plot_loss.get():
-                    self.ax.plot(x_axis, self.plot_data["loss"], color=self.plot_config["loss"]["color"], label=self.plot_config["loss"]["label"])
+                    self.ax.plot(x_axis, self.plot_data["loss"], color=self.plot_config["loss"]["color"], label=self.plot_config["loss"]["label"], linewidth="2.5")
                 if self.plot_eq_loss.get():
-                    self.ax.plot(x_axis, self.plot_data["eq_loss"], color=self.plot_config["eq_loss"]["color"], label=self.plot_config["eq_loss"]["label"])
+                    self.ax.plot(x_axis, self.plot_data["eq_loss"], color=self.plot_config["eq_loss"]["color"], linestyle='--', label=self.plot_config["eq_loss"]["label"], linewidth="2.5")
                 if self.plot_u_loss.get():
-                    self.ax.plot(x_axis, self.plot_data["u_loss"], color=self.plot_config["u_loss"]["color"], label=self.plot_config["u_loss"]["label"])
+                    self.ax.plot(x_axis, self.plot_data["u_loss"], color=self.plot_config["u_loss"]["color"], label=self.plot_config["u_loss"]["label"], linewidth="2.5")
                 self.ax.set_title("")
                 self.ax.set_xlabel("Epoch")
                 self.ax.set_ylabel("Value")
@@ -397,9 +410,9 @@ class App:
                         u_th_sorted = (u_th_sorted - np.min(u_th_sorted)) / (np.max(u_th_sorted) - np.min(u_th_sorted) + 1e-9)
                     self.ax.clear()
                     self.ax.grid(True, linestyle='--', color='lightgray')
-                    self.ax.plot(x_sorted, u_pred_sorted, label="Prediction", color=COLORS[3])
+                    self.ax.plot(x_sorted, u_pred_sorted, label="Prediction", color=COLORS[0], linewidth="2.5")
                     if u_th is not None:
-                        self.ax.plot(x_sorted, u_th_sorted, label="Theoretical", color="#000000", linestyle='-.')
+                        self.ax.plot(x_sorted, u_th_sorted, label="Theoretical", color="#000000", linestyle='-.', linewidth="2.5")
                     self.ax.set_xlabel("x")
                     self.ax.set_ylabel("u(x)")
                     self.ax.set_title("Function Plot")
@@ -471,11 +484,13 @@ class App:
 
     # compare mode
     def plot_comparative_log(self):
+        mode = self.plot_mode.get()
         plot_type = self.comparative_plot_type.get()
         yscale = self.y_scale.get()
         translate = {"lambda": "AEE", "loss": "LF", "eq_loss": "MSR", "u_loss": "MSEE"}
         omega_compare_mode = plot_type.startswith("omega_")
         metric, omega_logs, algorithms = None, None, None
+
         if omega_compare_mode:
             metric = plot_type.replace("omega_", "")
             omega_logs = {}  # omega: (label, color, data)
@@ -518,7 +533,9 @@ class App:
                     color_idx = [0.2, 0.4, 0.6, 0.8].index(omega) if omega in [0.2, 0.4, 0.6, 0.8] else i
                     omega_logs[omega] = {
                         "data": metric_data,
-                        "color": COLORS[color_idx],
+                        "color": COLORS01[color_idx],
+                        "linewidth": 2.5,
+                        "linestyle": Style01[color_idx],
                         "label": f"ω={omega}"
                     }
             else:
@@ -537,12 +554,84 @@ class App:
         self.ax.clear()
         self.ax.grid(True, linestyle='--', color='lightgray')
 
+        if mode == "Density":
+
+            # ========== shared sampling ==========
+            try:
+                sample_size = int(self.sample_size_entry.get())
+            except:
+                sample_size = 500000
+
+            # 从任意一个模型取 d 和 device（反正都一样）
+            ref_model = next(iter(algorithms.values()))["model"]
+            d = ref_model.d
+            device = next(ref_model.parameters()).device
+
+            X_raw = torch.rand(sample_size, d, dtype=torch.float64).to(device)
+            X_list = [X_raw[:, i:i + 1] for i in range(d)]
+
+            # ========== theoretical solution (ONLY ONCE) ==========
+            x_th, y_th = None, None
+            try:
+                with torch.no_grad():
+                    u_th = ref_model.u_th(X_list).cpu().numpy().squeeze()
+                u_th = np.abs(u_th)
+                u_th = (u_th - u_th.min()) / (u_th.max() - u_th.min() + 1e-9)
+                x_th, y_th = compute_density_curve(u_th)
+            except Exception as e:
+                print("[Theory] u_th failed:", e)
+
+            self.ax.clear()
+            self.ax.grid(True, linestyle='--', color='lightgray')
+
+            for i, algo in enumerate(["DRM", "IPMNN", "DRQI"]):
+                if algo not in algorithms or not algorithms[algo]["model"]:
+                    continue
+
+                model = algorithms[algo]["model"]
+
+                with torch.no_grad():
+                    try:
+                        u_pred = model.net_forward(X_list).cpu().numpy().squeeze()
+                    except Exception as e:
+                        print(f"[{algo}] Prediction failed:", e)
+                        continue
+
+                u_pred = np.abs(u_pred)
+                u_pred = (u_pred - u_pred.min()) / (u_pred.max() - u_pred.min() + 1e-9)
+
+                x_pred, y_pred = compute_density_curve(u_pred)
+
+                self.ax.plot(
+                    x_pred,
+                    y_pred,
+                    linewidth=2.5,
+                    color=COLORS[i],
+                    linestyle=TYPE01[i],
+                    label=f"{algo}"
+                )
+
+                if x_th is not None and y_th is not None:
+                    self.ax.plot(
+                        x_th,
+                        y_th,
+                        linestyle='--',
+                        linewidth=2.5,
+                        color='black',
+                        label="Theory"
+                    )
+
+            self.ax.set_xlabel("u")
+            self.ax.set_ylabel("Density")
+            self.ax.xaxis.set_major_locator(MaxNLocator(nbins=5))
+            return
+
         if omega_compare_mode:
             for omega in sorted(omega_logs.keys()):
                 entry = omega_logs[omega]
                 y_data = entry["data"]
                 x_axis = list(range(len(y_data)))
-                self.ax.plot(x_axis, y_data, label=entry["label"], color=entry["color"], linestyle='-')
+                self.ax.plot(x_axis, y_data, label=entry["label"], color=entry["color"], linestyle=entry["linestyle"], linewidth=entry["linewidth"])
             self.ax.set_xlabel("Epoch")
             self.ax.set_ylabel(translate.get(metric, metric.upper()))
             self.ax.set_yscale(yscale)
@@ -593,7 +682,8 @@ class App:
             # self.ax.legend(loc='upper right', framealpha=0.8, fontsize=10)
 
         elif plot_type in ["omega_lambda", "omega_loss", "omega_eq_loss", "omega_u_loss"]:
-            omega_map = {0.2: COLORS[0], 0.4: COLORS[1], 0.6: COLORS[2], 0.8: COLORS[3]}
+            omega_map = {0.2: COLORS[0], 0.4: COLORS[1], 0.6: COLORS[0], 0.8: COLORS[1]}
+            style_map = {0.2: "-", 0.4: "-", 0.6: "--", 0.8: "--"}
             metric_key = plot_type.replace("omega_", "")
             self.ax.clear()
             self.ax.grid(True, linestyle='--', color='lightgray')
@@ -623,7 +713,7 @@ class App:
                     else:
                         continue
                     x_data = list(range(len(y_data)))
-                    self.ax.plot(x_data, y_data, label=f"ω={omega_val}", color=omega_map[omega_val])
+                    self.ax.plot(x_data, y_data, label=f"ω={omega_val}", color=omega_map[omega_val], linestyle=style_map[omega_val], linewidth="2.5")
             ylabel_map = {
                 "lambda": "AEE",
                 "loss": "LF",
